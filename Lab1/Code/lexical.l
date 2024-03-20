@@ -1,9 +1,13 @@
 %option yylineno
 %option noyywrap
-/* locations */
-%{
 
+%{
+    #define YYSTYPE Node*
     #include <stdio.h>
+    #include <stdbool.h>
+    #include <stdlib.h>
+    #include <string.h>
+    #include "SyntaxTree.h"
     #include "syntax.tab.h"
 
     bool has_error = false;
@@ -33,12 +37,13 @@ ID {letter}({letter}|{digit})*
 SEMI ;
 COMMA ,
 RELOP >|<|>=|<=|==|!=
-PLUS +
-MINUS -
+ASSIGNOP =
+PLUS \+
+MINUS \-
 STAR \*
-DIV /
+DIV \/
 AND &&
-OR ||
+OR \|\|
 DOT \.
 NOT !
 TYPE int|float
@@ -55,47 +60,177 @@ ELSE else
 WHILE while
 
 
-BLANK [\t\n]
+BLANK [ \t\r]
 
 
 
 
 %%
 
+{BLANK} {;}
+{SEMI} { //printf("SEMI\n"); 
+         Type val;
+         val.string_type = (char*)malloc(strlen(yytext)+1);
+         strcpy(val.string_type, yytext);
+         yylval = createTokenNode(yylineno, val, "SEMI");
+         return SEMI; }
+{COMMA} {//printf("COMMA\n"); 
+         Type val;
+         val.string_type = (char*)malloc(strlen(yytext)+1);
+         strcpy(val.string_type, yytext);
+         yylval = createTokenNode(yylineno, val, "COMMA");
+         return COMMA; }
+{RELOP} {//printf("RELOP\n"); 
+         Type val;
+         val.string_type = (char*)malloc(strlen(yytext)+1);
+         strcpy(val.string_type, yytext);
+         yylval = createTokenNode(yylineno, val, "RELOP");
+         return RELOP; }
+{ASSIGNOP} { //printf("ASSIGNOP\n"); 
+         Type val;
+         val.string_type = (char*)malloc(strlen(yytext)+1);
+         strcpy(val.string_type, yytext);
+         yylval = createTokenNode(yylineno, val, "ASSIGNOP");
+         return ASSIGNOP; }
+{PLUS} { //printf("PLUS\n"); 
+         Type val;
+         val.string_type = (char*)malloc(strlen(yytext)+1);
+         strcpy(val.string_type, yytext);
+         yylval = createTokenNode(yylineno, val, "PLUS");
+         return PLUS; }
+{MINUS} { //printf("MINUS\n"); 
+         Type val;
+         val.string_type = (char*)malloc(strlen(yytext)+1);
+         strcpy(val.string_type, yytext);
+         yylval = createTokenNode(yylineno, val, "MINUS");
+         return MINUS; }
+{STAR} { //printf("STAR\n"); 
+         Type val;
+         val.string_type = (char*)malloc(strlen(yytext)+1);
+         strcpy(val.string_type, yytext);
+         yylval = createTokenNode(yylineno, val, "STAR");
+         return STAR; }
+{DIV} { //printf("DIV\n"); 
+         Type val;
+         val.string_type = (char*)malloc(strlen(yytext)+1);
+         strcpy(val.string_type, yytext);
+         yylval = createTokenNode(yylineno, val, "STAR");
+         return STAR; }
+{AND} { //printf("AND\n"); 
+         Type val;
+         val.string_type = (char*)malloc(strlen(yytext)+1);
+         strcpy(val.string_type, yytext);
+         yylval = createTokenNode(yylineno, val, "AND");
+         return AND; }
+{OR} { //printf("OR\n"); 
+         Type val;
+         val.string_type = (char*)malloc(strlen(yytext)+1);
+         strcpy(val.string_type, yytext);
+         yylval = createTokenNode(yylineno, val, "OR");
+         return OR; }
+{DOT} { //printf("DOT\n"); 
+         Type val;
+         val.string_type = (char*)malloc(strlen(yytext)+1);
+         strcpy(val.string_type, yytext);
+         yylval = createTokenNode(yylineno, val, "DOT");
+         return DOT; }
+{NOT} { //printf("NOT\n"); 
+         Type val;
+         val.string_type = (char*)malloc(strlen(yytext)+1);
+         strcpy(val.string_type, yytext);
+         yylval = createTokenNode(yylineno, val, "NOT");
+         return NOT; }
+{LP} { //printf("LP\n"); 
+         Type val;
+         val.string_type = (char*)malloc(strlen(yytext)+1);
+         strcpy(val.string_type, yytext);
+         yylval = createTokenNode(yylineno, val, "LP");
+         return LP; }
+{RP} { //printf("RP\n"); 
+         Type val;
+         val.string_type = (char*)malloc(strlen(yytext)+1);
+         strcpy(val.string_type, yytext);
+         yylval = createTokenNode(yylineno, val, "RP");
+         return RP; }
+{LB} { //printf("LB\n"); 
+         Type val;
+         val.string_type = (char*)malloc(strlen(yytext)+1);
+         strcpy(val.string_type, yytext);
+         yylval = createTokenNode(yylineno, val, "LB");
+         return LB; }
+{RB} { //printf("RB\n"); 
+         Type val;
+         val.string_type = (char*)malloc(strlen(yytext)+1);
+         strcpy(val.string_type, yytext);
+         yylval = createTokenNode(yylineno, val, "RB");
+         return RB; }
+{LC} { //printf("LC\n"); 
+         Type val;
+         val.string_type = (char*)malloc(strlen(yytext)+1);
+         strcpy(val.string_type, yytext);
+         yylval = createTokenNode(yylineno, val, "LC");
+         return LC; }
+{RC} { //printf("RC\n"); 
+         Type val;
+         val.string_type = (char*)malloc(strlen(yytext)+1);
+         strcpy(val.string_type, yytext);
+         yylval = createTokenNode(yylineno, val, "RC");
+         return RC; }
+{STRUCT} { //printf("STRUCT\n"); 
+         Type val;
+         val.string_type = (char*)malloc(strlen(yytext)+1);
+         strcpy(val.string_type, yytext);
+         yylval = createTokenNode(yylineno, val, "STRUCT");
+         return STRUCT; }
+{RETURN} { //printf("RETURN\n"); 
+         Type val;
+         val.string_type = (char*)malloc(strlen(yytext)+1);
+         strcpy(val.string_type, yytext);
+         yylval = createTokenNode(yylineno, val, "RETURN");
+         return RETURN; }
+{IF} { //printf("IF\n"); 
+         Type val;
+         val.string_type = (char*)malloc(strlen(yytext)+1);
+         strcpy(val.string_type, yytext);
+         yylval = createTokenNode(yylineno, val, "IF");
+         return IF; }
+{ELSE} { //printf("ELSE\n"); 
+         Type val;
+         val.string_type = (char*)malloc(strlen(yytext)+1);
+         strcpy(val.string_type, yytext);
+         yylval = createTokenNode(yylineno, val, "ELSE");
+         return ELSE; }
+{WHILE} { //printf("WHILE\n"); 
+         Type val;
+         val.string_type = (char*)malloc(strlen(yytext)+1);
+         strcpy(val.string_type, yytext);
+         yylval = createTokenNode(yylineno, val, "WHILE");
+         return WHILE; }
+{TYPE} { //printf("TYPE\n"); 
+         Type val;
+         val.string_type = (char*)malloc(strlen(yytext)+1);
+         strcpy(val.string_type, yytext);
+         yylval = createTokenNode(yylineno, val, "TYPE");
+         return TYPE; }
+{INT} { //printf("INT\n"); 
+         Type val;
+         val.int_type = atoi(yytext);
+         yylval = createTokenNode(yylineno, val, "INT");
+         return INT; }
+{FLOAT} { //printf("FLOAT\n"); 
+         Type val;
+         val.float_type = atof(yytext);
+         yylval = createTokenNode(yylineno, val, "FLOAT");
+         return FLOAT; }
+{ID} { //printf("ID\n"); 
+         Type val;
+         val.string_type = (char*)malloc(strlen(yytext)+1);
+         strcpy(val.string_type, yytext);
+         yylval = createTokenNode(yylineno, val, "ID");
+         return ID; }
 
-{INT} { printf("INT\n"); }
-{FLOAT} { printf("FLOAT\n"); }
-{ID} { printf("ID\n"); }
-{SEMI} { printf("SEMI\n"); }
-{COMMA} { printf("COMMA\n"); }
-{RELOP} { printf("RELOP\n"); }
-{PLUS} { printf("PLUS\n"); }
-{MINUS} { printf("MINUS\n"); }
-{STAR} { printf("STAR\n"); }
-{DIV} { printf("DIV\n"); }
-{AND} { printf("AND\n"); }
-{OR} { printf("OR\n"); }
-{DOT} { printf("DOT\n"); }
-{NOT} { printf("NOT\n"); }
-{TYPE} { printf("TYPE\n"); }
-{LP} { printf("LP\n"); }
-{RP} { printf("RP\n"); }
-{LB} { printf("LB\n"); }
-{RB} { printf("RB\n"); }
-{LC} { printf("LC\n"); }
-{RC} { printf("RC\n"); }
-{STRUCT} { printf("STRUCT\n"); }
-{RETURN} { printf("RETURN\n"); }
-{IF} { printf("IF\n"); }
-{ELSE} { printf("ELSE\n"); }
-{WHILE} { printf("WHILE\n"); }
 
-/*
-"//" {
-    char c = input();
-    while (c != '\n'  &&  c)
-        c = input();
-}*/
+
 
 
 \n { yycolumn = 1; }
@@ -104,7 +239,7 @@ BLANK [\t\n]
 
 
 
-/* Handle error type of input */
+
 0+{INT} {
     printf("Error type A at Line %d: Error format of number \'%s\'\n",
         yylineno, yytext);

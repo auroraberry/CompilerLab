@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
-//#include "syntax.tab.h"
+#include "syntax.tab.h"
+#include "SyntaxTree.h"
+#include "SyntaxTreePrinter.h"
 
 extern int yyparse();
 extern void yyrestart(FILE*); /* yyrestart(f)函数是Flex提供的库函数，它可以让Flex将其输入文件的文件指针yyin设置为f
@@ -8,8 +10,10 @@ extern void yyrestart(FILE*); /* yyrestart(f)函数是Flex提供的库函数，�
                                * */
 extern void yylex();
 extern FILE* yyin;
+extern Node* root;
+extern bool has_error;
 
-/*int main(int argc, char **argv) {
+int main(int argc, char **argv) {
     if (argc <= 1) return 1;
     FILE *f = fopen(argv[1], "r");
     if (!f) {
@@ -18,10 +22,12 @@ extern FILE* yyin;
     }
     yyrestart(f);
     yyparse();
+    if(!has_error)
+        printSyntaxTree(root, 0);
     return 0;
-}*/
+}
 
-int main(int argc, char** argv) {
+/*int main(int argc, char** argv) {
     if (argc > 1) {
         if (!(yyin = fopen(argv[1], "r"))) {
             perror(argv[1]);
@@ -30,4 +36,4 @@ int main(int argc, char** argv) {
     }
     while (yylex() != 0);
     return 0;
-}
+}*/

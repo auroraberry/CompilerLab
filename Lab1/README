@@ -57,7 +57,10 @@ gcc main.c lex.yy.c -lfl -o scanner
 
 6. Bison运行过程 语法分析：P49
 bison syntax.y (在在Bison源代码中引用lex.yy.c #include "lex.yy.c")
-bison -d syntax.y
+bison -d syntax.y {将编译的结果分拆成syntax.tab.c和syntax.tab.h两个文件，其中.h文件里包
+含着一些词法单元的类型定义之类的内容。得到这个.h文件之后，下一步是修改我们的Flex源代码
+lexical.l，增加对syntax.tab.h的引用，并且让Flex源代码中规则部分的每一条action都返回相应的词
+法单元}
 flex lexical.l
 gcc main.c syntax.tab.c -lfl -ly -o parser
 ./parser test.cmm
@@ -78,3 +81,7 @@ gcc main.c syntax.tab.c -lfl -ly -o parser
    动作中这些位置信息同样可以使用@$、@1、@2等进行引用。位置信息的数据类型是YYLTYPE
 
 10. Bison也规定任何排在后面的运算符其优先级都要高于排在前面的运算符。
+
+11. 在Bison中每个语法单元都对应了一个属性值，在语义动作中这些属性值可以使用
+$$、$1和$2等进行引用。实际上除了属性值之外，每个语法单元还对应了一个位置信息，在语义
+动作中这些位置信息同样可以使用@$、@1、@2等进行引用
