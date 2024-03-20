@@ -241,8 +241,8 @@ BLANK [ \t\r]
 
 
 0+{INT} {
-    printf("Error type A at Line %d: Error format of number \'%s\'\n",
-        yylineno, yytext);
+    printf("Error type A at Line %d: Error format of number \'%d\'\n",
+        yylineno, atoi(yytext));
     has_error = true;
 }
 
@@ -251,6 +251,8 @@ BLANK [ \t\r]
         yylineno, yytext);
     has_error = true;
 }
+
+
 
 . {
     printf("Error type A at Line %d: Mysterious characters \'%s\'\n",

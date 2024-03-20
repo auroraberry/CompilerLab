@@ -15,22 +15,18 @@ void printSyntaxTree(Node* node, int depth){
         }
     }
     else{
-        
+        printf("%s", node->data.specifier);
         if(strcmp(node->data.specifier, "ID") == 0){
-            printf("%s: ", node->data.specifier);
-            printf("%s", node->data.value.string_type);
+            printf(": %s", node->data.value.string_type);
         }
         else if(strcmp(node->data.specifier, "TYPE") == 0){
-            printf("%s: ", node->data.specifier);
-            printf("%s", node->data.value.string_type);
+            printf(": %s", node->data.value.string_type);
         }
         else if(strcmp(node->data.specifier, "INT") == 0){
-            printf("%s: ", node->data.specifier);
-            printf("%d", node->data.value.int_type);
+            printf(": %d", node->data.value.int_type);
         }
         else if(strcmp(node->data.specifier, "FLOAT") == 0){
-            printf("%s: ", node->data.specifier);
-            printf("%.6f", node->data.value.float_type);
+            printf(": %.6f", node->data.value.float_type);
         }
         printf("\n");
     }
