@@ -1,0 +1,2 @@
+Error type A at Line 3: Error format of int '0123'
+Error type A at Line 4: Error format of ID '0x3F'

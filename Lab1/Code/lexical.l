@@ -9,8 +9,10 @@
     #include <string.h>
     #include "SyntaxTree.h"
     #include "syntax.tab.h"
+    
+    bool has_handled[2000];
 
-    bool has_error = false;
+    bool lexical_error = false;
 
     int yycolumn = 1;
     #define YY_USER_ACTION \
@@ -18,6 +20,13 @@
     yylloc.first_column = yycolumn; \
     yylloc.last_column = yycolumn + yyleng - 1; \
     yycolumn += yyleng;
+
+
+    bool needHandling(int lineno){
+        bool result = !has_handled[lineno];
+        has_handled[lineno] = true;
+        return result;
+    }
 %}
 
 
@@ -32,7 +41,7 @@ sign [+-]?
 
 
 INT [1-9]{digit}*|0
-FLOAT {INT}\.{digit}+|{digit}*\.{digit}*[Ee]{sign}{digit}+
+FLOAT {INT}\.{digit}+|{INT}\.{digit}*[Ee]{sign}{digit}+|\.{digit}+[Ee]{sign}{digit}+
 ID {letter}({letter}|{digit})*
 SEMI ;
 COMMA ,
@@ -237,27 +246,79 @@ BLANK [ \t\r]
 
 
 
+"//" {
+    if(needHandling(yylineno)){
+        printf("Error type B at Line %d: Error format of statement \'%s\'\n",
+        yylineno, yytext);
+        lexical_error = true;
+    }
+	char c = input();
+	while (c != '\n' && c)
+		c = input();
+}
 
+"/*" {
+    if(needHandling(yylineno)){
+        printf("Error type B at Line %d: Error format of statement \'%s...\'\n",
+        yylineno, yytext);
+        lexical_error = true;
+    }
+    char previous = input(), current = input();
+    while(!( previous == '*' && current == '/')){
+        previous = current;
+        current = input();
+    }
+}
 
+"*/" {
+    if(needHandling(yylineno)){
+        printf("Error type B at Line %d: Error format of statement \'%s\'\n",
+        yylineno, yytext);
+        lexical_error = true;
+    }
+}
 
 0+{INT} {
-    printf("Error type A at Line %d: Error format of number \'%d\'\n",
-        yylineno, atoi(yytext));
-    has_error = true;
+    if(needHandling(yylineno)){
+        printf("Error type A at Line %d: Error format of int \'%s\'\n",
+        yylineno, yytext);
+    }
+    lexical_error = true;
 }
 
 {digit}+{ID} {
-    printf("Error type A at Line %d: Error format of ID \'%s\'\n",
+    if(needHandling(yylineno)){
+        printf("Error type A at Line %d: Error format of ID \'%s\'\n",
         yylineno, yytext);
-    has_error = true;
+    }
+    lexical_error = true;
 }
 
 
+{FLOAT}{ID} {
+    if(needHandling(yylineno)){
+        printf("Error type A at Line %d: Error format of float \'%s\'\n",
+        yylineno, yytext);
+    }
+    lexical_error = true;
+}
+
+{INT}\.{ID}? {
+    if(needHandling(yylineno)){
+        printf("Error type A at Line %d: Error format of float \'%s\'\n",
+        yylineno, yytext);
+    }
+    lexical_error = true;
+}
+
 
 . {
-    printf("Error type A at Line %d: Mysterious characters \'%s\'\n",
+    if(needHandling(yylineno))
+    {
+        printf("Error type A at Line %d: Mysterious characters \'%s\'\n",
         yylineno, yytext);
-    has_error = true;
+    }
+    lexical_error = true;
 }
 
 

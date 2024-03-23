@@ -5,10 +5,17 @@
     #include "lex.yy.c"
 
     Node* root = NULL;
-
-    void yyerror(char* msg) {
-        fprintf(stdout, "error: %s\n", msg);
+    bool syntax_error = false;
+    bool needHandling(int lineno); 
+    
+    void handleError(int lineno, char* msg) {
+        if(needHandling(lineno)){
+            syntax_error = true;
+            printf("Error type B at Line %d: Syntax Error. %s", yylineno, msg); 
+        }
     }
+
+    void yyerror(char* msg){}
 
 %}
 
@@ -78,6 +85,10 @@ ExtDef : Specifier ExtDecList SEMI {
     kids[2] = $3;
     $$ = createVariableNode(@$.first_line, val, "ExtDef", 3, kids);
 }
+| Specifier error SEMI {
+    //$$ = NULL;
+    handleError(@1.first_line, "Error in global definition.\n");
+}
 | Specifier SEMI {
     Type val;
     val.string_type = NULL;
@@ -85,6 +96,14 @@ ExtDef : Specifier ExtDecList SEMI {
     kids[0] = $1;
     kids[1] = $2;
     $$ = createVariableNode(@$.first_line, val, "ExtDef", 2, kids);
+}
+| Specifier error {
+    //$$ = NULL;
+    handleError(@1.first_line, "Error in global definition.\n");
+}
+| error SEMI {
+    //$$ = NULL;
+    handleError(@2.first_line, "Error in global definition.\n");
 }
 | Specifier FunDec CompSt {
     Type val;
@@ -146,6 +165,14 @@ StructSpecifier : STRUCT OptTag LC DefList RC {
     kids[4] = $5;
     $$ = createVariableNode(@$.first_line, val, "StructSpecifier", 5, kids);
 }
+| STRUCT OptTag LC error RC {
+    //$$ = NULL;
+    handleError(@3.first_line, "Error in Struct definition.\n");
+}
+| STRUCT error LC DefList RC {
+    //$$ = NULL;
+    handleError(@1.first_line, "Error in Struct definition.\n");
+}
 | STRUCT Tag {
     Type val;
     val.string_type = NULL;
@@ -195,6 +222,14 @@ VarDec : ID {
     kids[3] = $4;
     $$ = createVariableNode(@$.first_line, val, "VarDec", 4, kids);
 }
+| error LB INT RB {
+    //$$ = NULL;
+    handleError(@2.first_line, "Error in var declaration.\n");
+}
+| VarDec LB error RB {
+    //$$ = NULL;
+    handleError(@2.first_line, "Error in var declaration.\n");
+}
 ;
 
 FunDec : ID LP VarList RP {
@@ -207,6 +242,10 @@ FunDec : ID LP VarList RP {
     kids[3] = $4;
     $$ = createVariableNode(@$.first_line, val, "FunDec", 4, kids);
 }
+| error LP VarList RP {
+    //$$ = NULL;
+    handleError(@2.first_line, "Error in func declaration.\n");
+}
 | ID LP RP {
     Type val;
     val.string_type = NULL;
@@ -215,6 +254,10 @@ FunDec : ID LP VarList RP {
     kids[1] = $2;
     kids[2] = $3;
     $$ = createVariableNode(@$.first_line, val, "FunDec", 3, kids);
+}
+| ID LP error RP {
+    //$$ = NULL;
+    handleError(@2.first_line, "Error in func declaration.\n");
 }
 ;
 
@@ -259,6 +302,15 @@ CompSt : LC DefList StmtList RC {
     kids[3] = $4;
     $$ = createVariableNode(@$.first_line, val, "CompSt", 4, kids);
 }
+| LC DefList error RC {
+    //$$ = NULL;
+    handleError(@2.first_line, "Error in CompSt.\n");
+}
+| error RC {
+    //$$ = NULL;
+    handleError(@2.first_line, "Error in CompSt.\n");
+}
+;
 
 StmtList : Stmt StmtList {
     Type val;
@@ -279,6 +331,10 @@ Stmt : Exp SEMI {
     kids[1] = $2;
     $$ = createVariableNode(@$.first_line, val, "Stmt", 2, kids);
 }
+| error SEMI {
+    //$$ = NULL;
+    handleError(@1.first_line, "Invalid statement.\n");
+}
 | CompSt {
     Type val;
     val.string_type = NULL;
@@ -295,6 +351,10 @@ Stmt : Exp SEMI {
     kids[2] = $3;
     $$ = createVariableNode(@$.first_line, val, "Stmt", 3, kids);
 }
+| RETURN error SEMI {
+    //$$ = NULL;
+    handleError(@1.first_line, "Invalid statement.\n");
+}
 | IF LP Exp RP Stmt %prec LOWER_THAN_ELSE {
     Type val;
     val.string_type = NULL;
@@ -305,6 +365,10 @@ Stmt : Exp SEMI {
     kids[3] = $4;
     kids[4] = $5;
     $$ = createVariableNode(@$.first_line, val, "Stmt", 5, kids);
+}
+| IF LP error RP Stmt %prec LOWER_THAN_ELSE {
+    //$$ = NULL;
+    handleError(@2.first_line, "Invalid statement.\n");
 }
 | IF LP Exp RP Stmt ELSE Stmt {
     Type val;
@@ -319,6 +383,10 @@ Stmt : Exp SEMI {
     kids[6] = $7;
     $$ = createVariableNode(@$.first_line, val, "Stmt", 7, kids);
 }
+| IF LP error RP Stmt ELSE Stmt {
+    //$$ = NULL;
+    handleError(@2.first_line, "Invalid statement.\n");
+}
 | WHILE LP Exp RP Stmt {
     Type val;
     val.string_type = NULL;
@@ -329,6 +397,10 @@ Stmt : Exp SEMI {
     kids[3] = $4;
     kids[4] = $5;
     $$ = createVariableNode(@$.first_line, val, "Stmt", 5, kids);
+}
+| WHILE LP error RP Stmt {
+    //$$ = NULL;
+    handleError(@2.first_line, "Invalid statement.\n");
 }
 ;
 
@@ -355,7 +427,12 @@ Def : Specifier DecList SEMI {
     kids[1] = $2;
     kids[2] = $3;
     $$ = createVariableNode(@$.first_line, val, "Def", 3, kids);
-} ;
+} 
+| Specifier error SEMI {
+    //$$ = NULL;
+    handleError(@1.first_line, "Error in definition.\n");
+}
+;
 
 DecList : Dec {
     Type val;
@@ -390,6 +467,9 @@ Dec : VarDec {
     kids[1] = $2;
     kids[2] = $3;
     $$ = createVariableNode(@$.first_line, val, "Dec", 3, kids);
+}
+| error ASSIGNOP Exp {
+    handleError(@2.first_line, "Error in declaration.\n");
 }
 ;
 
@@ -478,6 +558,10 @@ Exp : Exp ASSIGNOP Exp {
     kids[2] = $3;
     $$ = createVariableNode(@$.first_line, val, "Exp", 3, kids);
 }
+| LP error RP {
+    //$$ = NULL;
+    handleError(@1.first_line, "Error in exp.\n");
+}
 | MINUS Exp {
     Type val;
     val.string_type = NULL;
@@ -522,6 +606,14 @@ Exp : Exp ASSIGNOP Exp {
     kids[2] = $3;
     kids[3] = $4;
     $$ = createVariableNode(@$.first_line, val, "Exp", 4, kids);
+}
+| Exp LB error RB {
+    //$$ = NULL;
+    handleError(@1.first_line, "Error in exp.\n");
+}
+| error LB Exp RB {
+    //$$ = NULL;
+    handleError(@1.first_line, "Error in exp.\n");
 }
 | Exp DOT ID {
     Type val;

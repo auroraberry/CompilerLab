@@ -1,1 +1,2 @@
-error: syntax error
+Error type A at Line 3: Error format of float '1.05e'
+Error type A at Line 4: Error format of float '1.05e'

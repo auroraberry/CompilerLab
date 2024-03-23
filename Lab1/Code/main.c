@@ -11,7 +11,8 @@ extern void yyrestart(FILE*); /* yyrestart(f)函数是Flex提供的库函数，�
 extern void yylex();
 extern FILE* yyin;
 extern Node* root;
-extern bool has_error;
+extern bool lexical_error;
+extern bool syntax_error;
 
 int main(int argc, char **argv) {
     if (argc <= 1) return 1;
@@ -22,7 +23,7 @@ int main(int argc, char **argv) {
     }
     yyrestart(f);
     yyparse();
-    if(!has_error)
+    if(!lexical_error && !syntax_error)
         printSyntaxTree(root, 0);
     return 0;
 }
