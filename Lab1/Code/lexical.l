@@ -41,7 +41,7 @@ sign [+-]?
 
 
 INT [1-9]{digit}*|0
-FLOAT {INT}\.{digit}+|{INT}\.{digit}*[Ee]{sign}{digit}+|\.{digit}+[Ee]{sign}{digit}+
+FLOAT {INT}\.{digit}+|{digit}+\.{digit}*[Ee]{sign}{digit}+|\.{digit}+[Ee]{sign}{digit}+
 ID {letter}({letter}|{digit})*
 SEMI ;
 COMMA ,
@@ -123,7 +123,7 @@ BLANK [ \t\r]
          Type val;
          val.string_type = (char*)malloc(strlen(yytext)+1);
          strcpy(val.string_type, yytext);
-         yylval = createTokenNode(yylineno, val, "STAR");
+         yylval = createTokenNode(yylineno, val, "DIV");
          return STAR; }
 {AND} { //printf("AND\n"); 
          Type val;
@@ -303,6 +303,14 @@ BLANK [ \t\r]
     lexical_error = true;
 }
 
+{FLOAT}[\._A-Za-z0-9]+ {
+    if(needHandling(yylineno)){
+        printf("Error type A at Line %d: Error format of float \'%s\'\n",
+        yylineno, yytext);
+    }
+    lexical_error = true;
+}
+
 {INT}\.{ID}? {
     if(needHandling(yylineno)){
         printf("Error type A at Line %d: Error format of float \'%s\'\n",
@@ -310,6 +318,16 @@ BLANK [ \t\r]
     }
     lexical_error = true;
 }
+
+\.{digit}+ {
+    if(needHandling(yylineno)){
+        printf("Error type A at Line %d: Error format of float \'%s\'\n",
+        yylineno, yytext);
+    }
+    lexical_error = true;
+}
+
+
 
 
 . {

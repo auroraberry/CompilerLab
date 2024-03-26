@@ -97,10 +97,6 @@ ExtDef : Specifier ExtDecList SEMI {
     kids[1] = $2;
     $$ = createVariableNode(@$.first_line, val, "ExtDef", 2, kids);
 }
-| Specifier error {
-    //$$ = NULL;
-    handleError(@1.first_line, "Error in global definition.\n");
-}
 | error SEMI {
     //$$ = NULL;
     handleError(@2.first_line, "Error in global definition.\n");
@@ -259,6 +255,10 @@ FunDec : ID LP VarList RP {
     //$$ = NULL;
     handleError(@2.first_line, "Error in func declaration.\n");
 }
+| error LP RP {
+    //$$ = NULL;
+    handleError(@2.first_line, "Error in func declaration.\n");
+}
 ;
 
 VarList : ParamDec COMMA VarList {
@@ -306,9 +306,9 @@ CompSt : LC DefList StmtList RC {
     //$$ = NULL;
     handleError(@2.first_line, "Error in CompSt.\n");
 }
-| error RC {
+| LC error StmtList RC {
     //$$ = NULL;
-    handleError(@2.first_line, "Error in CompSt.\n");
+    handleError(@2.first_line, "Error in definition.\n");
 }
 ;
 
@@ -331,7 +331,7 @@ Stmt : Exp SEMI {
     kids[1] = $2;
     $$ = createVariableNode(@$.first_line, val, "Stmt", 2, kids);
 }
-| error SEMI {
+| Exp error SEMI {
     //$$ = NULL;
     handleError(@1.first_line, "Invalid statement.\n");
 }
@@ -432,6 +432,10 @@ Def : Specifier DecList SEMI {
     //$$ = NULL;
     handleError(@1.first_line, "Error in definition.\n");
 }
+| error SEMI {
+    //$$ = NULL;
+    handleError(@1.first_line, "Error in definition.\n");
+}
 ;
 
 DecList : Dec {
@@ -486,6 +490,10 @@ Exp : Exp ASSIGNOP Exp {
     kids[2] = $3;
     $$ = createVariableNode(@$.first_line, val, "Exp", 3, kids);
 }
+| error ASSIGNOP Exp {
+    //$$ = NULL;
+    handleError(@1.first_line, "Error in exp.\n");
+}
 | Exp AND Exp {
     Type val;
     val.string_type = NULL;
@@ -539,6 +547,10 @@ Exp : Exp ASSIGNOP Exp {
     kids[1] = $2;
     kids[2] = $3;
     $$ = createVariableNode(@$.first_line, val, "Exp", 3, kids);
+}
+| Exp STAR error Exp {
+    //$$ = NULL;
+    handleError(@1.first_line, "Error in exp.\n");
 }
 | Exp DIV Exp {
     Type val;

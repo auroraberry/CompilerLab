@@ -1,0 +1,2 @@
+Error type B at Line 7: Syntax Error. Invalid statement.
+Error type B at Line 8: Syntax Error. Error in exp.

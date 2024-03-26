@@ -3,7 +3,7 @@ import subprocess
 
 # 定义测试文件文件夹路径和输出文件夹路径
 test_files_folder = '../Test'
-output_folder = '../Output'
+output_folder = '../Test/Output'
 
 # 遍历测试文件文件夹中的文件
 for filename in os.listdir(test_files_folder):
