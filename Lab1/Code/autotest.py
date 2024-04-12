@@ -2,7 +2,7 @@ import os
 import subprocess
 
 # 定义测试文件文件夹路径和输出文件夹路径
-test_files_folder = '../Test'
+test_files_folder = '../inputs'
 output_folder = '../Test/Output'
 
 # 遍历测试文件文件夹中的文件

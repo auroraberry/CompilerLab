@@ -1,0 +1,2 @@
+Error type A at Line 2: Error format of float '9.8e1.'
+Error type A at Line 3: Error format of ID '6e5'

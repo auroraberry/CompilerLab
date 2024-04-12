@@ -1,0 +1,4 @@
+Error type A at Line 2: Error format of ID '1b1010'
+Error type B at Line 8: Syntax Error. Invalid statement.
+Error type B at Line 9: Syntax Error. Invalid statement.
+Error type B at Line 12: Syntax Error. Error in exp.

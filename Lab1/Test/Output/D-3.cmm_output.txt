@@ -1,0 +1,4 @@
+Error type B at Line 1: Error format of statement '/*...'
+Error type B at Line 4: Error format of statement '//'
+Error type B at Line 5: Error format of statement '//'
+Error type B at Line 7: Error format of statement '/*...'

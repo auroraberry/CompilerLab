@@ -4,6 +4,11 @@
 
 #include "SyntaxTree.h"
 
+void initSemanticInfo(Node* node){
+    node->inh_semantics.semantic_type = NULL;
+    node->syn_semantics.semantic_type = NULL;
+}
+
 
 Node* createTokenNode(int ln, Type val, char* spec){
     Node* node = (Node*)malloc(sizeof(Node));
@@ -14,6 +19,11 @@ Node* createTokenNode(int ln, Type val, char* spec){
     node->is_token = true;
     node->child_count = 0;
     node->children = NULL;
+
+    #ifdef __SYMBOLTABLE__
+        initSemanticInfo(node);
+    #endif
+    
     return node;
 }
 
@@ -30,5 +40,10 @@ Node* createVariableNode(int ln, Type val, char* spec, int count, Node** kids){
     for(int i = 0; i < count; i++){
         node->children[i] = kids[i];
     }
+
+    #ifdef __SYMBOLTABLE__
+        initSemanticInfo(node);
+    #endif
+    
     return node;
 }
