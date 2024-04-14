@@ -58,7 +58,7 @@ bool isSameType(SemanticType type1, SemanticType type2){
             return false;
         }
         default:
-            printf("Error type of definition!\n");
+            //printf("Error type of definition!\n");
             return false;
         }
     }
@@ -116,7 +116,7 @@ bool addSymbolPair(char* name, SemanticType type){
     if(TableContains(name) == -1){
         return false;
     }
-    SymbolPair symbol_pair = (SymbolPair)malloc(sizeof(struct SymbolPair_));
+    SymbolPair symbol_pair = createSymbolPair();
     symbol_pair->name = name;
     symbol_pair->type = type;
     ArrayListInsert(symbol_table, ArrayListGet(symbol_table, ArrayListSize(symbol_table)), symbol_pair);
@@ -131,4 +131,105 @@ SymbolPair TableGet(char* name){
     int i = TableContains(name);
     assert(i != -1);
     return TableGet(i);
+}
+
+SemanticType createSemanticType(enum Kind kind){
+    SemanticType type = (SemanticType)malloc(sizeof(struct Type_));
+    memset(type, 0, sizeof(struct Type_));
+    type->kind = kind;
+    switch (kind)
+    {
+        case BASIC: type->val = createBasicVal();break;
+        case FUNC: type->val = createArgList();break;
+        case STRUCT: type->val = createFieldList();break;
+        case ARRAY: type->val = createArray();break;
+        default:
+            break;
+    }
+    return type;
+}
+
+BasicVal createBasicVal(){
+    BasicVal basic = (BasicVal)malloc(sizeof(struct BasicVal_));
+    memset(basic, 0, sizeof(struct BasicVal_));
+    return basic;
+}
+
+Array createArray(){
+    Array array = (Array)malloc(sizeof(struct Array_));
+    memset(array, 0, sizeof(struct Array_));
+    array->elem = createSemanticType(NONE);
+    return array;
+}
+
+FieldList createFieldList(){
+    FieldList fields = (FieldList)malloc(sizeof(struct FieldList_));
+    memset(fields, 0, sizeof(struct FieldList_));
+    fields->type = createSemanticType(NONE);
+    fields->name = createCharName();
+    return fields;
+}
+
+ArgList createArgList(){
+    ArgList args = (ArgList)malloc(sizeof(struct ArgList_));
+    memset(args, 0, sizeof(struct ArgList_));
+    args->type = createSemanticType(NONE);
+    args->name = createCharName();
+    return args;
+}
+
+SymbolPair createSymbolPair(){
+    SymbolPair pair = (SymbolPair)malloc(sizeof(struct SymbolPair_));
+    memset(pair, 0, sizeof(struct SymbolPair_));
+    return pair;
+}
+
+char* createCharName(int size = 100){
+    char* result = (char*)malloc(size);
+    memset(result, 0, size);
+    return result;
+}
+
+
+// helper function
+void copySemanticType(SemanticType src, SemanticType dest){
+    assert(src != NULL && dest != NULL);
+    switch (src->kind)
+    {
+        case BASIC: copyBasicVal(src->val, dest->val); break;
+        case STRUCT: copyStructure(src->val, dest->val); break;
+        case FUNC: copyFunction(src->val, dest->val);break;
+        case ARRAY: copyArray(src->val, dest->val);break;
+        default:
+            break;
+    }
+    dest->kind = src->kind;
+}
+void copyStructure(FieldList src, FieldList dest){
+    assert(src != NULL && dest != NULL);
+    strcpy(dest->name, src->name);
+    copySemanticType(src->type, dest->type);
+    if(src->next != NULL){
+        dest->next = createFieldList();
+        copyStructure(src->next, dest->next);
+    }
+}
+void copyArray(Array src, Array dest){
+    assert(src != NULL && dest != NULL);
+    dest->size = src->size;
+    copySemanticType(src, dest);
+}
+void copyFunction(ArgList src, ArgList dest){
+    assert(src != NULL && dest != NULL);
+    strcpy(dest->name, src->name);
+    copySemanticType(src, dest);
+    if(src->next != NULL){
+        dest->next = createArgList();
+        copyFunction(src->next, dest->next);
+    }
+}
+void copyBasicVal(BasicVal src, BasicVal dest){
+    assert(src != NULL && dest != NULL);
+    dest->basic_type = src->basic_type;
+    dest->val = src->val;
 }

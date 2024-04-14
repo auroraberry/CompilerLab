@@ -36,15 +36,7 @@ typedef struct SynSemanticInfo
 //inherited attribute
 typedef struct InhSemanticInfo
 {
-    enum Kind specifier_type;
-    union 
-    {
-        BasicVal basic_val;
-        FieldList field_list;
-        ArgList arg_list;
-        Array array_list;
-    } definition_info;
-    
+    SemanticType specifier_type;
 } InhSemanticInfo;
 
 typedef struct Node
@@ -56,7 +48,7 @@ typedef struct Node
 
     #ifdef __SYMBOLTABLE__
     SynSemanticInfo syn_semantics;
-    InhSemanticInfo inh_semantics;
+    InhSemanticInfo inh_semantics; //inherited attribute
     #endif
 } Node;
 

@@ -2,7 +2,7 @@
 #define __SYMBOLTABLE__
 #include "ArrayList.h"
 
-enum Kind {BASIC, ARRAY, STRUCT, FUNC, NONE};
+enum Kind {BASIC, ARRAY, STRUCT, FUNC, ERROR, NONE};
 
 enum BASIC_TYPE {INT, FLOAT};
 
@@ -72,6 +72,16 @@ struct SymbolPair_{
     SemanticType type;
 };
 
+// memory management  
+SemanticType createSemanticType(enum Kind Kind);
+BasicVal createBasicVal();
+Array createArray();
+FieldList createFieldList();
+ArgList createArgList();
+SymbolPair createSymbolPair();
+char* createCharName(int size = 100);
+
+
 
 extern SymbolTable symbol_table;
 
@@ -92,5 +102,13 @@ SymbolPair TableGet(int index);
 
 SymbolPair TableGet(char* name);
 
+
+
+// helper function
+void copySemanticType(SemanticType src, SemanticType dest);
+void copyStructure(FieldList src, FieldList dest);
+void copyArray(Array src, Array dest);
+void copyFunction(ArgList src, ArgList dest);
+void copyBasicVal(BasicVal src, BasicVal dest);
 
 #endif

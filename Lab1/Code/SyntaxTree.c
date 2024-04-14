@@ -5,8 +5,9 @@
 #include "SyntaxTree.h"
 
 void initSemanticInfo(Node* node){
-    node->inh_semantics.semantic_type = NULL;
-    node->syn_semantics.semantic_type = NULL;
+    node->inh_semantics.specifier_type = createSemanticType(NONE);
+    node->syn_semantics.semantic_type = createSemanticType(NONE);
+    node->syn_semantics.canBeLeftVal = false;
 }
 
 

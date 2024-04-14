@@ -9,76 +9,76 @@
 // node data also contains lineno
 
 // node is ID
-void variableUsageBeforeDefinition(Node* node);
+bool variableUsageBeforeDefinition(Node* node);
 
 // ID LP ArgList/empty RP
 // node is ID
-void functionUsageBeforeDefinition(Node* node);
+bool functionUsageBeforeDefinition(Node* node);
 
 // variable and function can not be the same name
 // node is ID
-void variableDoubleDefinition(Node* node);
+bool variableDoubleDefinition(Node* node);
 
 //FunDec → ID LP VarList RP | ID LP RP
 //node is ID
-void functionDoubleDefinition(Node* node);
+bool functionDoubleDefinition(Node* node);
 
 // exp = exp
 // node is left and right
-void typesNotMatchInAssignOP(Node* left, Node* right);
+bool typesNotMatchInAssignOP(Node* left, Node* right);
 
 // exp should record if it can be left value
-void rightValInLeftOfAssignOP(Node* node);
+bool rightValInLeftOfAssignOP(Node* node);
 
 // if op is not/minus, then left should be NULL
-void OperandNotMatchOP(Node* left, Node* op, Node* right);
+bool OperandNotMatchOP(Node* left, Node* op, Node* right);
 
 // Stmt → RETURN Exp SEMI
 // node is exp
-void returnTypeNotMatchDefinition(Node* node, SemanticType return_type);
+bool returnTypeNotMatchDefinition(Node* node, SemanticType return_type);
 
 // Exp → ID LP Args RP
 // the node is the function ID, and args is handled by handleArgs
-void argListNotMatchDefinition(Node* node, ArgList args);
+bool argListNotMatchDefinition(Node* node, ArgList args);
 
 // [...] for non-array variable
 // Exp → Exp LB Exp RB
 // node is exp before LB 
-void nonArrayVariableUsingArrayAccess(Node* node);
+bool nonArrayVariableUsingArrayAccess(Node* node);
 
 // Exp → ID LP Args RP | ID LP RP
 // () for non-function varible
 // node is ID
-void nonFuncVariableUsingFuncCall(Node* node);
+bool nonFuncVariableUsingFuncCall(Node* node);
 
 // Exp → Exp LB Exp RB
 // node is exp after LB
-void nonIntInArrayAccess(Node* node);
+bool nonIntInArrayAccess(Node* node);
 
 // exp.ID
 // node is exp
-void nonStructVariableUsingDot(Node* node);
+bool nonStructVariableUsingDot(Node* node);
 // node is ID
-void usingNonDefinitionFiled(Node* exp, Node* id);
+bool usingNonDefinitionFiled(Node* exp, Node* id);
 
 // the inner ID of struct field definition
 // each definition of struct field should call this method
-void doubleDefinitionOfStructField(Node* node);
+bool doubleDefinitionOfStructField(Node* node);
 
 // the node is dec
 // handle dec should record where it is called
-void initializeFiledWhileDefinition(Node* node);
+bool initializeFiledWhileDefinition(Node* node);
 
 // StructSpecifier → STRUCT OptTag LC DefList RC
 // OptTag → ID
 // the node is ID
-void structDoubleDefinition(Node* node);
+bool structDoubleDefinition(Node* node);
 
 // StructSpecifier → STRUCT OptTag LC DefList RC | STRUCT Tag
 // Tag → ID
 // the node is ID
 // just judge the second production
-void variableDefinitionUsingUndefinedStruct(Node* node);
+bool variableDefinitionUsingUndefinedStruct(Node* node);
 
 
 

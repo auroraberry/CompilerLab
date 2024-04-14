@@ -11,6 +11,7 @@ ArrayList* ArrayListCreate(int data_size_, int capacity){
     result->size = capacity;
     result->data_size = data_size_;
     result->data = malloc(data_size_*capacity);
+    memcmp(result->data, 0, data_size_*capacity);
     return result;
 }
 
