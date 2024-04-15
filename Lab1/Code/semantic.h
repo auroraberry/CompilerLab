@@ -31,7 +31,7 @@ bool typesNotMatchInAssignOP(Node* left, Node* right);
 bool rightValInLeftOfAssignOP(Node* node);
 
 // if op is not/minus, then left should be NULL
-bool OperandNotMatchOP(Node* left, Node* op, Node* right);
+bool OperandNotMatchOP(Node* left, Node* right, Node* op);
 
 // Stmt → RETURN Exp SEMI
 // node is exp
@@ -63,7 +63,7 @@ bool usingNonDefinitionFiled(Node* exp, Node* id);
 
 // the inner ID of struct field definition
 // each definition of struct field should call this method
-bool doubleDefinitionOfStructField(Node* node);
+bool doubleDefinitionOfStructField(Node* node, FieldList fields);
 
 // the node is dec
 // handle dec should record where it is called
@@ -72,7 +72,7 @@ bool initializeFiledWhileDefinition(Node* node);
 // StructSpecifier → STRUCT OptTag LC DefList RC
 // OptTag → ID
 // the node is ID
-bool structDoubleDefinition(Node* node);
+bool structDoubleDefinition(char* name, int lineno);
 
 // StructSpecifier → STRUCT OptTag LC DefList RC | STRUCT Tag
 // Tag → ID
@@ -97,8 +97,11 @@ char* handleTag(Node* node);
 
 
 // handle declaration
-SymbolPair handleVarDec(Node* node);
-SymbolPair handleFunDec(Node* node);
+// return pair.name is NULL, if it meet error
+Array handleArrayDec(Node* node, int size);
+SemanticType handleVarDec(Node* node);
+void handleVarDecInStruct(Node* node, FieldList fields);
+SemanticType handleFunDec(Node* node);
 ArgList handleVarList(Node* node);
 ArgList handleParamDec(Node* node);
 
@@ -110,31 +113,34 @@ void handleStmt(Node* node);
 
 
 // handle local definition
-void handleDefList(Node* node);
-void handleDef(Node* node);
-void handleDecList(Node* node);
-void handleDec(Node* node);
+void handleStructDefList(Node* node, FieldList fields);
+void handleFunctionDefList(Node* node);
+FieldList handleStructDef(Node* node, FieldList fields);
+void handleFunctionDef(Node* node);
+FieldList handleStructDecList(Node* node, FieldList fields);
+void handleFunctionDecList(Node* node);
+FieldList handleStructDec(Node* node, FieldList fields);
+void handleFunctionDec(Node* node);
 
 
 // handle expression
 // setting whether the node can be left value
 SemanticType handleExp(Node* node);
 SemanticType handleExpASSIGNOP(Node* left, Node* right);
-SemanticType handleExpAND(Node* left, Node* right);
-SemanticType handleExpOR(Node* left, Node* right);
-SemanticType handleExpRELOP(Node* left, Node* right);
-SemanticType handleExpMATH(Node* left, Node* right);
-SemanticType handleExpLPRP(Node* node);
-SemanticType handleExpMinus(Node* node);
-SemanticType handleExpNOT(Node* node);
-SemanticType handleExpFuncCall(Node* node);
-SemanticType handleExpArray(Node* node);
-SemanticType handleExpStruct(Node* node);
-SemanticType handleExpID(Node* node);
-SemanticType handleExpINT(Node* node);
-SemanticType handleExpFLOAT(Node* node);
+SemanticType handleExpAND(Node* left, Node* right, Node* and);
+SemanticType handleExpOR(Node* left, Node* right, Node* or);
+SemanticType handleExpRELOP(Node* left, Node* right, Node* relop);
+SemanticType handleExpMATH(Node* left, Node* right, Node* op);
+SemanticType handleExpMinus(Node* node, Node* minus); // node is right exp
+SemanticType handleExpNOT(Node* node, Node* not); // node is right exp
+SemanticType handleExpFuncCall(Node* node); // node is father exp
+SemanticType handleExpArray(Node* node); // node is father exp
+SemanticType handleExpStruct(Node* node); // node is father exp
+SemanticType handleExpID(Node* node, enum Kind kind); // node is ID
+SemanticType handleExpINT(Node* node); // node is INT
+SemanticType handleExpFLOAT(Node* node); // node is FLOAT
 
-
+ArgList handleArgs(Node* node);
 
 
 

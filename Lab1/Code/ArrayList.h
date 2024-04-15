@@ -1,6 +1,6 @@
 #ifndef __ARRAYLIST__
 #define __ARRAYLIST__
-
+#include <stdbool.h>
 typedef struct ArrayList_ ArrayList;
 
 
@@ -12,7 +12,7 @@ struct ArrayList_
     void* data;
 };
 
-ArrayList* ArrayListCreate(int data_size_, int capacity = 10);
+ArrayList* ArrayListCreate(int data_size_, int capacity);
 
 void ArrayListDestroy(ArrayList* array);
 

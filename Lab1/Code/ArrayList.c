@@ -11,7 +11,7 @@ ArrayList* ArrayListCreate(int data_size_, int capacity){
     result->size = capacity;
     result->data_size = data_size_;
     result->data = malloc(data_size_*capacity);
-    memcmp(result->data, 0, data_size_*capacity);
+    memset(result->data, 0, data_size_*capacity);
     return result;
 }
 
@@ -25,9 +25,7 @@ void ArrayListDestroy(ArrayList* array){
 }
 
 void ArrayListClear(ArrayList* array){
-    for(int i = 0; i < array->current; i++){
-        memset(array->data[i], 0, array->data_size);
-    }
+    memset(array->data, 0, array->data_size * array->current);
     array->current = 0;
 }
 
@@ -38,19 +36,18 @@ int ArrayListSize(ArrayList* array){
 void ArrayListInsert(ArrayList* array, int pos, void* data_){
     assert(array->current >= pos && pos >= 0);
     for(int i = array->current; i > pos; i--){
-        memcpy(array->data[i], array->data[i-1], array->data_size);
+        memcpy(array->data + i * array->data_size, array->data + (i - 1) * array->data_size, array->data_size);
     }
-    memcpy(array->data[pos], data_, array->data_size);
+    memcpy(array->data + pos * array->data_size, data_, array->data_size);
     if(array->current == array->size){
         ArrayListGrow(array);
     }
-    return true;
 }
 
 void ArrayListRemove(ArrayList* array, int pos){
     assert(array->current > pos && pos >= 0);
     for(int i = pos; i < array->current - 1; i++){
-        memcpy(array->data[i], array->data[i+1], array->data_size);
+        memcpy(array->data + i * array->data_size, array->data + (i + 1) * array->data_size, array->data_size);
     }
     array->current--;
 }
@@ -58,7 +55,7 @@ void ArrayListRemove(ArrayList* array, int pos){
 bool ArrayListContains(ArrayList* array, void* data_){
     bool result = false;
     for(int i = 0 ; i < array->current; i++){
-        if(memcmp(data_, array->data[i], array->data_size) == 0){
+        if(memcmp(data_, array->data + i * array->data_size, array->data_size) == 0){
             result = true;
             break;
         }
@@ -68,14 +65,14 @@ bool ArrayListContains(ArrayList* array, void* data_){
 
 void* ArrayListGet(ArrayList* array, int pos){
     assert(array->current > pos && pos >= 0);
-    return &(array->data[pos]);
+    return array->data + pos * array->data_size;
 }
 
 static void ArrayListGrow(ArrayList* array){
     array->size = array->size * 2;
     void* new_data = malloc(array->data_size * array->size);
-    for(int i = 0; i < current; i++){
-        memcpy(new_data[i], array->data[i], array->data_size);
+    for(int i = 0; i < array->current; i++){
+        memcpy(new_data + i * array->data_size, array->data + i * array->data_size, array->data_size);
     }
     void* tem = array->data;
     array->data = new_data;

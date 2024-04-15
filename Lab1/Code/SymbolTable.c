@@ -22,8 +22,8 @@ bool isSameType(SemanticType type1, SemanticType type2){
         switch (type1->kind)
         {
         case BASIC: return type1->val.basic_val->basic_type == type2->val.basic_val->basic_type;
-        case ARRAY: return isSameType(type1->val.array.elem, type2->val.array.elem);
-        case STRUCT: {
+        case ARRAY: return isSameType(type1->val.array->elem, type2->val.array->elem);
+        case STRUCTURE: {
             FieldList f1 = type1->val.structure;
             FieldList f2 = type2->val.structure;
             while(f1 != NULL && f2 != NULL){
@@ -75,10 +75,6 @@ void freeTable(){
     ArrayListDestroy(symbol_table);
 }
 
-bool TableContains(SymbolPair symbol_pair){
-    assert(symbol_pair != NULL);
-    return TableContains(symbol_pair->name, symbol_pair->type);
-}
 
 // return -1 if not contains, else return index
 int TableContains(char* name){
@@ -96,41 +92,27 @@ int TableContains(char* name){
     return result;
 }
 
-bool TableContains(char* name, SemanticType type){
-    assert(name != NULL && type != NULL);
-    int size = ArrayListSize(symbol_table);
-    SymbolPair pair;
-    bool result = false;
-    for(int i = 0; i < size; i++){
-        pair = ArrayListGet(symbol_table, i);
-        if(strcmp(pair->name, name) == 0 && isSameType(pair->type, type)){
-            result = true;
-            break;
-        }
-    }
-    return result;
-}
 
 
 bool addSymbolPair(char* name, SemanticType type){
-    if(TableContains(name) == -1){
+    if(TableContains(name) != -1){
         return false;
     }
     SymbolPair symbol_pair = createSymbolPair();
     symbol_pair->name = name;
     symbol_pair->type = type;
-    ArrayListInsert(symbol_table, ArrayListGet(symbol_table, ArrayListSize(symbol_table)), symbol_pair);
+    ArrayListInsert(symbol_table, ArrayListSize(symbol_table), (void *)symbol_pair);
     return true;
 }
 
-SymbolPair TableGet(int index){
+SymbolPair TableGetByIndex(int index){
     return (SymbolPair)ArrayListGet(symbol_table, index);
 }
 
 SymbolPair TableGet(char* name){
     int i = TableContains(name);
     assert(i != -1);
-    return TableGet(i);
+    return TableGetByIndex(i);
 }
 
 SemanticType createSemanticType(enum Kind kind){
@@ -139,10 +121,10 @@ SemanticType createSemanticType(enum Kind kind){
     type->kind = kind;
     switch (kind)
     {
-        case BASIC: type->val = createBasicVal();break;
-        case FUNC: type->val = createArgList();break;
-        case STRUCT: type->val = createFieldList();break;
-        case ARRAY: type->val = createArray();break;
+        case BASIC: type->val.basic_val = createBasicVal();break;
+        case FUNC: type->val.function = createArgList();break;
+        case STRUCTURE: type->val.structure = createFieldList();break;
+        case ARRAY: type->val.array = createArray();break;
         default:
             break;
     }
@@ -184,9 +166,9 @@ SymbolPair createSymbolPair(){
     return pair;
 }
 
-char* createCharName(int size = 100){
-    char* result = (char*)malloc(size);
-    memset(result, 0, size);
+char* createCharName(){
+    char* result = (char*)malloc(100);
+    memset(result, 0, 100);
     return result;
 }
 
@@ -196,17 +178,17 @@ void copySemanticType(SemanticType src, SemanticType dest){
     assert(src != NULL && dest != NULL);
     switch (src->kind)
     {
-        case BASIC: copyBasicVal(src->val, dest->val); break;
-        case STRUCT: copyStructure(src->val, dest->val); break;
-        case FUNC: copyFunction(src->val, dest->val);break;
-        case ARRAY: copyArray(src->val, dest->val);break;
+        case BASIC: dest->val.basic_val = createBasicVal();copyBasicVal(src->val.basic_val, dest->val.basic_val); break;
+        case STRUCTURE: dest->val.structure = createFieldList(); copyStructure(src->val.structure, dest->val.structure); break;
+        case FUNC: dest->val.function = createArgList();;copyFunction(src->val.function, dest->val.function);break;
+        case ARRAY: dest->val.array = createArray();copyArray(src->val.array, dest->val.array);break;
         default:
             break;
     }
     dest->kind = src->kind;
 }
 void copyStructure(FieldList src, FieldList dest){
-    assert(src != NULL && dest != NULL);
+    assert(src != NULL);
     strcpy(dest->name, src->name);
     copySemanticType(src->type, dest->type);
     if(src->next != NULL){
@@ -217,12 +199,12 @@ void copyStructure(FieldList src, FieldList dest){
 void copyArray(Array src, Array dest){
     assert(src != NULL && dest != NULL);
     dest->size = src->size;
-    copySemanticType(src, dest);
+    copySemanticType(src->elem, dest->elem);
 }
 void copyFunction(ArgList src, ArgList dest){
     assert(src != NULL && dest != NULL);
     strcpy(dest->name, src->name);
-    copySemanticType(src, dest);
+    copySemanticType(src->type, dest->type);
     if(src->next != NULL){
         dest->next = createArgList();
         copyFunction(src->next, dest->next);

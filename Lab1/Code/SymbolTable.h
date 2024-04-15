@@ -2,9 +2,9 @@
 #define __SYMBOLTABLE__
 #include "ArrayList.h"
 
-enum Kind {BASIC, ARRAY, STRUCT, FUNC, ERROR, NONE};
+enum Kind {BASIC, ARRAY, STRUCTURE, FUNC, ERROR, NONE};
 
-enum BASIC_TYPE {INT, FLOAT};
+enum BASIC_TYPE {BASIC_INT, BASIC_FLOAT};
 
 enum STATUS {NOEXISTS, EXISTS};
 
@@ -79,7 +79,7 @@ Array createArray();
 FieldList createFieldList();
 ArgList createArgList();
 SymbolPair createSymbolPair();
-char* createCharName(int size = 100);
+char* createCharName();
 
 
 
@@ -89,16 +89,15 @@ void initTable();
 
 void freeTable();
 
-bool TableContains(SymbolPair symbol_pair);
+int TableContains(char* name);
 
-bool TableContains(char* name, SemanticType type);
 
 //add symbol and its info, if it is already existing, then return false, otherwise return true 
 bool addSymbolPair(char* name, SemanticType type);
 
 bool isSameType(SemanticType type1, SemanticType type2);
 
-SymbolPair TableGet(int index);
+SymbolPair TableGetByIndex(int index);
 
 SymbolPair TableGet(char* name);
 
