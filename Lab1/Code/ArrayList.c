@@ -39,6 +39,7 @@ void ArrayListInsert(ArrayList* array, int pos, void* data_){
         memcpy(array->data + i * array->data_size, array->data + (i - 1) * array->data_size, array->data_size);
     }
     memcpy(array->data + pos * array->data_size, data_, array->data_size);
+    array->current++;
     if(array->current == array->size){
         ArrayListGrow(array);
     }

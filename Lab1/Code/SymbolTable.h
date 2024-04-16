@@ -81,7 +81,7 @@ ArgList createArgList();
 SymbolPair createSymbolPair();
 char* createCharName();
 
-
+bool handle[1000];
 
 extern SymbolTable symbol_table;
 

@@ -1,0 +1,2 @@
+Error type 12 at Line 4: non-INT variable in []!
+Error type 5 at Line 4: the types besides assign op not match!

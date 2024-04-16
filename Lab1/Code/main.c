@@ -27,6 +27,7 @@ int main(int argc, char **argv) {
     if(!lexical_error && !syntax_error)
         //printSyntaxTree(root, 0);
     #ifdef __SEMANTIC__
+        initTable();
         handleProgram(root);
     #endif
     return 0;

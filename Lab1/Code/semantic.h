@@ -5,6 +5,8 @@
 #include "SyntaxTree.h"
 #include <stdbool.h>
 
+
+
 // the node name is contained in node.data.value.string/int/float
 // node data also contains lineno
 
@@ -98,8 +100,7 @@ char* handleTag(Node* node);
 
 // handle declaration
 // return pair.name is NULL, if it meet error
-Array handleArrayDec(Node* node, int size);
-SemanticType handleVarDec(Node* node);
+void handleVarDec(Node* node);
 void handleVarDecInStruct(Node* node, FieldList fields);
 SemanticType handleFunDec(Node* node);
 ArgList handleVarList(Node* node);
@@ -113,15 +114,15 @@ void handleStmt(Node* node);
 
 
 // handle local definition
-void handleStructDefList(Node* node, FieldList fields);
-void handleFunctionDefList(Node* node);
-FieldList handleStructDef(Node* node, FieldList fields);
-void handleFunctionDef(Node* node);
-FieldList handleStructDecList(Node* node, FieldList fields);
-void handleFunctionDecList(Node* node);
-FieldList handleStructDec(Node* node, FieldList fields);
-void handleFunctionDec(Node* node);
-
+void handleDefListInStruct(Node* node, FieldList fields);
+FieldList handleDefInStruct(Node* node, FieldList fields);
+FieldList handleDecListInStruct(Node* node, FieldList fields);
+FieldList handleDecInStruct(Node* node, FieldList fields);
+void handleDefListInFunction(Node* node);
+void handleDefInFunction(Node* node);
+void handleDecListInFunction(Node* node);
+void handleDecInFunction(Node* node);
+char *getVarDecIDName(Node *node);
 
 // handle expression
 // setting whether the node can be left value

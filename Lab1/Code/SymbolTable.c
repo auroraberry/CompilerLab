@@ -68,6 +68,7 @@ void initTable(){
     if(symbol_table != NULL){
         freeTable();
     }
+    memset(handle, 0, 1000);
     symbol_table = ArrayListCreate(sizeof(struct SymbolPair_), 100); 
 }
 
