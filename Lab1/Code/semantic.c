@@ -9,7 +9,7 @@
 
 bool has_handle(int lineno){
     if(handle[lineno]){
-        //return true;
+        return true;
     }
     handle[lineno] = true;
     return false;
@@ -44,11 +44,11 @@ bool functionUsageBeforeDefinition(Node *node) {
     {
         printError(2, node->data.lineno, "function usage before definition!");
         return true;
-    } else if (TableGetByIndex(index)->type->kind != FUNC) // ID is not function
+    } /*else if (TableGetByIndex(index)->type->kind != FUNC) // ID is not function
     {
         printError(2, node->data.lineno, "function usage before definition!");
         return true;
-    }
+    }*/
     return false;
 }
 
@@ -275,15 +275,15 @@ bool structDoubleDefinition(char *name, int lineno) {
 // Tag → ID
 // the node is ID
 // just judge the second production
-bool variableDefinitionUsingUndefinedStruct(Node *node) {
-    int index = TableContains(node->data.value.string_type);
+bool variableDefinitionUsingUndefinedStruct(int lineno, char* name) {
+    int index = TableContains(name);
     if (index == -1) // not find ID definition
     {
-        printError(17, node->data.lineno, "using undefined struct to define variable!");
+        printError(17, lineno, "using undefined struct to define variable!");
         return true;
     } else if (TableGetByIndex(index)->type->kind != STRUCTURE) // ID is struct
     {
-        printError(17, node->data.lineno, "using undefined struct to define variable!");
+        printError(17, lineno, "using undefined struct to define variable!");
         return true;
     }
     return false;
@@ -348,7 +348,7 @@ SemanticType handleStructSpecifier(Node *node) {
     if (node->child_count == 2) // handle StructSpecifier → STRUCT Tag
     {
         char *struct_name = handleTag(node->children[1]);
-        if (!variableDefinitionUsingUndefinedStruct(node->children[1])) {
+        if (!variableDefinitionUsingUndefinedStruct(node->children[1]->data.lineno, struct_name)) {
             copySemanticType(TableGet(struct_name)->type, type);
         } else {
             type->kind = ERROR; // using undefined struct variable
@@ -361,8 +361,9 @@ SemanticType handleStructSpecifier(Node *node) {
         Node *def_list = node->children[3];
         copySemanticType(type, def_list->inh_semantics.specifier_type);
         type->val.structure->type = createSemanticType(STRUCTURE);
+        // type->val.structure->type->val.structure is an empty list with the head node's type.kind = NULL
         handleDefListInStruct(def_list, type->val.structure->type->val.structure);
-
+        type->val.structure->type->val.structure = type->val.structure->type->val.structure->next;
         // OptTag == NULL not record in symbol table
         if (node->children[1] == NULL) {}
         // record in symbol table
@@ -561,61 +562,37 @@ void handleDecInFunction(Node *node) {
 
 
 
-
+// add the definition in the tail of the fields
 void handleDefListInStruct(Node *node, FieldList fields) {
     if (node != NULL) {
-        FieldList head = handleDefInStruct(node->children[0], fields);
-        copySemanticType(node->inh_semantics.specifier_type, node->children[1]->inh_semantics.specifier_type);
+        handleDefInStruct(node->children[0], fields);
+        if(node->children[1] != NULL){
+            copySemanticType(node->inh_semantics.specifier_type, node->children[1]->inh_semantics.specifier_type);
+        }
         handleDefListInStruct(node->children[1], fields);
-        node->syn_semantics.semantic_type = createSemanticType(STRUCTURE);
-        node->syn_semantics.semantic_type->val.structure = head;
-        FieldList tail = head;
-        while (tail->next != NULL) {
-            tail = tail->next;
-        }
-        if(node->children[2] != NULL){
-            tail->next = node->children[2]->syn_semantics.semantic_type->val.structure;
-        }
     }
 }
 
-FieldList handleDefInStruct(Node *node, FieldList fields) {
+void handleDefInStruct(Node *node, FieldList fields) {
     SemanticType type = handleSpecifier(node->children[0]);
     copySemanticType(type, node->children[1]->inh_semantics.specifier_type);
-    return handleDecListInStruct(node->children[1], fields);
+    handleDecListInStruct(node->children[1], fields);
 }
 
-FieldList handleDecListInStruct(Node *node, FieldList fields) {
+void handleDecListInStruct(Node *node, FieldList fields) {
     copySemanticType(node->inh_semantics.specifier_type, node->children[0]->inh_semantics.specifier_type);
-    FieldList head = handleDecInStruct(node->children[0], fields);
+    handleDecInStruct(node->children[0], fields);
     if (node->child_count == 3) {
         copySemanticType(node->inh_semantics.specifier_type, node->children[2]->inh_semantics.specifier_type);
-        if(head != NULL)
-        {
-            FieldList tail = head;
-            while (tail->next != NULL) {
-                tail = tail->next;
-            }
-            tail->next = handleDecListInStruct(node->children[2], fields);
-        }
-        else{
-            head = handleDecListInStruct(node->children[2], fields);
-        }
+        handleDecListInStruct(node->children[2], fields);
     }
-    return head;
 }
 
-FieldList handleDecInStruct(Node *node, FieldList fields) {
-    FieldList result = NULL;
+void handleDecInStruct(Node *node, FieldList fields) {
     if (!initializeFiledWhileDefinition(node)) {
-        result = createFieldList();
         copySemanticType(node->inh_semantics.specifier_type, node->children[0]->inh_semantics.specifier_type);
         handleVarDecInStruct(node->children[0], fields);
-        SemanticType type = node->children[0]->syn_semantics.semantic_type;
-        strcpy(result->name, getVarDecIDName(node->children[0]));
-        copySemanticType(type, result->type);
     }
-    return result;
 }
 
 void handleVarDecInStruct(Node *node, FieldList fields) {
@@ -638,7 +615,7 @@ void handleVarDecInStruct(Node *node, FieldList fields) {
             }
             fields->next = createFieldList();
             strcpy(fields->next->name, name);
-            copySemanticType(node->children[0]->syn_semantics.semantic_type, fields->type);
+            copySemanticType(node->children[0]->syn_semantics.semantic_type, fields->next->type);
         }
     }
         // array definition

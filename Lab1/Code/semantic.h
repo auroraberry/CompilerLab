@@ -80,7 +80,7 @@ bool structDoubleDefinition(char* name, int lineno);
 // Tag → ID
 // the node is ID
 // just judge the second production
-bool variableDefinitionUsingUndefinedStruct(Node* node);
+bool variableDefinitionUsingUndefinedStruct(int lineno, char* name);
 
 
 
@@ -115,9 +115,9 @@ void handleStmt(Node* node);
 
 // handle local definition
 void handleDefListInStruct(Node* node, FieldList fields);
-FieldList handleDefInStruct(Node* node, FieldList fields);
-FieldList handleDecListInStruct(Node* node, FieldList fields);
-FieldList handleDecInStruct(Node* node, FieldList fields);
+void handleDefInStruct(Node* node, FieldList fields);
+void handleDecListInStruct(Node* node, FieldList fields);
+void handleDecInStruct(Node* node, FieldList fields);
 void handleDefListInFunction(Node* node);
 void handleDefInFunction(Node* node);
 void handleDecListInFunction(Node* node);

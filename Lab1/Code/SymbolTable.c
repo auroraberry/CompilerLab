@@ -24,8 +24,8 @@ bool isSameType(SemanticType type1, SemanticType type2){
         case BASIC: return type1->val.basic_val->basic_type == type2->val.basic_val->basic_type;
         case ARRAY: return isSameType(type1->val.array->elem, type2->val.array->elem);
         case STRUCTURE: {
-            FieldList f1 = type1->val.structure;
-            FieldList f2 = type2->val.structure;
+            FieldList f1 = type1->val.structure->type->val.structure;
+            FieldList f2 = type2->val.structure->type->val.structure;
             while(f1 != NULL && f2 != NULL){
                 if(isSameType(f1->type, f2->type)){
                     f1 = f1->next;

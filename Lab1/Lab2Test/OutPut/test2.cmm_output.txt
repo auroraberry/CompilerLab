@@ -1,2 +1,1 @@
 Error type 2 at Line 4: function usage before definition!
-Error type 11 at Line 4: using () for non-function variable!

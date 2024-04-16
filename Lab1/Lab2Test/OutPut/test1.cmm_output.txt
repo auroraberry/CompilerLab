@@ -1,2 +1,1 @@
 Error type 1 at Line 4: variable usage before definition!
-Error type 5 at Line 4: the types besides assign op not match!

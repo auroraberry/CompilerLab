@@ -24,12 +24,14 @@ int main(int argc, char **argv) {
     }
     yyrestart(f);
     yyparse();
-    if(!lexical_error && !syntax_error)
+    if(!lexical_error && !syntax_error){
         //printSyntaxTree(root, 0);
-    #ifdef __SEMANTIC__
+        #ifdef __SEMANTIC__
         initTable();
         handleProgram(root);
-    #endif
+        #endif
+    }
+
     return 0;
 }
 
