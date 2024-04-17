@@ -40,6 +40,7 @@ bool isSameType(SemanticType type1, SemanticType type2){
             }
             return false;
         }
+        case ERROR: return true;
         case FUNC: {
             ArgList a1 = type1->val.function;
             ArgList a2 = type2->val.function;
@@ -180,7 +181,7 @@ void copySemanticType(SemanticType src, SemanticType dest){
     switch (src->kind)
     {
         case BASIC: dest->val.basic_val = createBasicVal();copyBasicVal(src->val.basic_val, dest->val.basic_val); break;
-        case STRUCTURE: dest->val.structure = createFieldList(); copyStructure(src->val.structure, dest->val.structure); break;
+        case STRUCTURE: dest->val.structure = createFieldList();copyStructure(src->val.structure, dest->val.structure); break;
         case FUNC: dest->val.function = createArgList();;copyFunction(src->val.function, dest->val.function);break;
         case ARRAY: dest->val.array = createArray();copyArray(src->val.array, dest->val.array);break;
         default:
@@ -189,7 +190,9 @@ void copySemanticType(SemanticType src, SemanticType dest){
     dest->kind = src->kind;
 }
 void copyStructure(FieldList src, FieldList dest){
-    assert(src != NULL);
+    if(src == NULL){
+        return ;
+    }
     strcpy(dest->name, src->name);
     copySemanticType(src->type, dest->type);
     if(src->next != NULL){
@@ -198,7 +201,10 @@ void copyStructure(FieldList src, FieldList dest){
     }
 }
 void copyArray(Array src, Array dest){
-    assert(src != NULL && dest != NULL);
+    if(src == NULL){
+        return;
+    }
+    assert(dest != NULL);
     dest->size = src->size;
     copySemanticType(src->elem, dest->elem);
 }

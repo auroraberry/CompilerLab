@@ -109,7 +109,7 @@ bool OperandNotMatchOP(Node *left, Node *right, Node *op) {
         if (left == NULL) // minus x
         {
             SemanticType type = handleExp(right);
-            if (type->kind != BASIC || type->val.basic_val->basic_type != BASIC_INT) {
+            if (type->kind != BASIC ) {
                 printError(7, right->data.lineno, "operand does not match op!");
                 return true;
             }
@@ -130,7 +130,7 @@ bool OperandNotMatchOP(Node *left, Node *right, Node *op) {
                 printError(7, right->data.lineno, "operand does not match op!");
                 return true;
             }
-        } else // and / or
+        } else if(strcmp(op->data.specifier, "AND") == 0 || strcmp(op->data.specifier, "OR") == 0)// and / or
         {
             SemanticType left_type = handleExp(left);
             SemanticType right_type = handleExp(right);
@@ -140,10 +140,19 @@ bool OperandNotMatchOP(Node *left, Node *right, Node *op) {
                 return true;
             }
         }
+        else // relop
+        {
+            SemanticType left_type = handleExp(left);
+            SemanticType right_type = handleExp(right);
+            if (!isSameType(left_type, right_type) || left_type->kind != BASIC ) {
+                printError(7, right->data.lineno, "operand does not match op!");
+                return true;
+            }
+        }
     } else if (isArithmeticOP(op)) {
         SemanticType left_type = handleExp(left);
         SemanticType right_type = handleExp(right);
-        if (!isSameType(left_type, right_type) || left_type->kind != BASIC) {
+        if (left_type->kind != BASIC || !isSameType(left_type, right_type) ) {
             printError(7, right->data.lineno, "operand does not match op!");
             return true;
         }
@@ -165,7 +174,11 @@ bool returnTypeNotMatchDefinition(Node *node, SemanticType return_type) {
 // Exp → ID LP Args RP
 // the node is the function ID, and args is handled by handleArgs
 bool argListNotMatchDefinition(Node *node, ArgList args) {
-    ArgList params = handleExpID(node, FUNC)->val.function->next;
+    SemanticType type = handleExpID(node, FUNC);
+    if(type->kind == ERROR){
+        return true;
+    }
+    ArgList params = type->val.function->next;
     while (params != NULL && args != NULL) {
         if (!isSameType(params->type, args->type)) {
             printError(9, node->data.lineno, "argList not match definition!");
@@ -431,6 +444,9 @@ SemanticType handleFunDec(Node *node) {
     if (functionDoubleDefinition(node->children[0])) {
         node->inh_semantics.specifier_type->kind = ERROR;
         node->syn_semantics.semantic_type->kind = ERROR;
+        if(node->child_count == 4){
+            handleVarList(node->children[2]);
+        }
         return node->syn_semantics.semantic_type;
     }
     char *name = createCharName();
@@ -554,9 +570,8 @@ void handleDecInFunction(Node *node) {
         SemanticType assign_type = handleExp(node->children[2]);
         if (!isSameType(specifier, assign_type)) {
             printError(5, node->data.lineno, "the types besides assign op not match!");
-        } else {
-            handleVarDec(node->children[0]);
         }
+        handleVarDec(node->children[0]); // the error in right of = is not compact the type of left
     }
 }
 
@@ -589,10 +604,9 @@ void handleDecListInStruct(Node *node, FieldList fields) {
 }
 
 void handleDecInStruct(Node *node, FieldList fields) {
-    if (!initializeFiledWhileDefinition(node)) {
-        copySemanticType(node->inh_semantics.specifier_type, node->children[0]->inh_semantics.specifier_type);
-        handleVarDecInStruct(node->children[0], fields);
-    }
+    initializeFiledWhileDefinition(node);
+    copySemanticType(node->inh_semantics.specifier_type, node->children[0]->inh_semantics.specifier_type);
+    handleVarDecInStruct(node->children[0], fields);
 }
 
 void handleVarDecInStruct(Node *node, FieldList fields) {
@@ -624,7 +638,7 @@ void handleVarDecInStruct(Node *node, FieldList fields) {
         SemanticType specifier = node->children[0]->inh_semantics.specifier_type;
         specifier->val.array->size = node->children[2]->data.value.int_type;
         copySemanticType(node->inh_semantics.specifier_type, specifier->val.array->elem);
-        handleVarDec(node->children[0]);
+        handleVarDecInStruct(node->children[0], fields);
         copySemanticType(node->children[0]->syn_semantics.semantic_type, node->syn_semantics.semantic_type);
         node->syn_semantics.canBeLeftVal = node->children[0]->syn_semantics.canBeLeftVal;
     }
@@ -641,7 +655,6 @@ SemanticType handleExp(Node *node) {
             if (type->kind != ERROR) {
                 node->syn_semantics.canBeLeftVal = true;
             }
-            copySemanticType(type, node->syn_semantics.semantic_type);
             return type;
         } else if (strcmp(node->children[0]->data.specifier, "INT") == 0) {
             return handleExpINT(node->children[0]);
@@ -652,7 +665,6 @@ SemanticType handleExp(Node *node) {
     }
         // NOT / MINUS
     else if (node->child_count == 2) {
-        copySemanticType(node->inh_semantics.specifier_type, node->children[1]->inh_semantics.specifier_type);
         if (strcmp(node->children[0]->data.specifier, "NOT") == 0) {
             return handleExpNOT(node->children[1], node->children[0]);
         } else if (strcmp(node->children[0]->data.specifier, "MINUS") == 0) {
@@ -797,8 +809,8 @@ SemanticType handleExpStruct(Node *node) {
     if (usingNonDefinitionFiled(node->children[0], node->children[2])) {
         return createSemanticType(ERROR);
     }
-    SemanticType structure = handleExp(node);
-    FieldList head = structure->val.structure->next;
+    SemanticType structure = handleExp(node->children[0]);
+    FieldList head = structure->val.structure->type->val.structure;
     while (head != NULL) {
         if (strcmp(head->name, node->children[2]->data.value.string_type) == 0) {
             return head->type;
