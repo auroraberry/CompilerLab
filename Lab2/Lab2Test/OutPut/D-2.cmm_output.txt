@@ -1,0 +1,4 @@
+Error type 3 at Line 19: variable double definition!
+Error type 3 at Line 20: variable double definition!
+Error type 3 at Line 32: variable double definition!
+Error type 3 at Line 33: variable double definition!

@@ -1,0 +1,1 @@
+Error type 15 at Line 7: double definition of struct field!

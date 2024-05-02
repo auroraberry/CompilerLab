@@ -9,7 +9,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
-#include "SymbolTable.h"
 
 typedef union Type
 {
@@ -26,18 +25,6 @@ typedef struct NodeData
     char* specifier; // eg. "ID" "INT" "TYPE" "EXPLIST"
 } NodeData;
 
-//synthesize attribute
-typedef struct SynSemanticInfo
-{
-    SemanticType semantic_type;
-    bool canBeLeftVal; // only address
-} SynSemanticInfo;
-
-//inherited attribute
-typedef struct InhSemanticInfo
-{
-    SemanticType specifier_type;
-} InhSemanticInfo;
 
 typedef struct Node
 {
@@ -45,16 +32,9 @@ typedef struct Node
     bool is_token; 
     int child_count;
     struct Node** children; // create children nodes by count
-
-    #ifdef __SYMBOLTABLE__
-    SynSemanticInfo syn_semantics;
-    InhSemanticInfo inh_semantics; //inherited attribute
-    #endif
 } Node;
 
-#ifdef __SYMBOLTABLE__
-void initSemanticInfo(Node* node);
-#endif
+
 
 Node* createTokenNode(int ln, Type val, char* spec);
 

@@ -1,0 +1,4 @@
+Error type 7 at Line 14: operand does not match op!
+Error type 13 at Line 36: non-STRUCT variable using '.'!
+Error type 6 at Line 57: right value in the left of assign op!
+Error type 8 at Line 58: return type not match definition!

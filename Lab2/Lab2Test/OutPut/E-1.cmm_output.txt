@@ -1,0 +1,3 @@
+Error type B at Line 6: Syntax Error. Error in global definition.
+Error type B at Line 25: Syntax Error. Error in global definition.
+Error type B at Line 34: Syntax Error. Error in global definition.
