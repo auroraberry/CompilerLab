@@ -1,11 +1,13 @@
 #include "SymbolTable.h"
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
 #include <assert.h>
+#include "IR.h"
+#include "ArrayList.h"
 
 SymbolTable symbol_table = NULL;
+bool handle[1000];
 
 bool isSameType(SemanticType type1, SemanticType type2){
     if(type1 == NULL && type2 == NULL){
@@ -70,7 +72,11 @@ void initTable(){
         freeTable();
     }
     memset(handle, 0, 1000);
-    symbol_table = ArrayListCreate(sizeof(struct SymbolPair_), 100); 
+    symbol_table = ArrayListCreate(sizeof(struct SymbolPair_), 100);
+#ifdef __IR__
+    addReadFunc();
+    addWriteFunc();
+#endif
 }
 
 void freeTable(){
@@ -182,7 +188,7 @@ void copySemanticType(SemanticType src, SemanticType dest){
     {
         case BASIC: dest->val.basic_val = createBasicVal();copyBasicVal(src->val.basic_val, dest->val.basic_val); break;
         case STRUCTURE: dest->val.structure = createFieldList();copyStructure(src->val.structure, dest->val.structure); break;
-        case FUNC: dest->val.function = createArgList();;copyFunction(src->val.function, dest->val.function);break;
+        case FUNC: dest->val.function = createArgList();copyFunction(src->val.function, dest->val.function);break;
         case ARRAY: dest->val.array = createArray();copyArray(src->val.array, dest->val.array);break;
         default:
             break;
@@ -221,4 +227,35 @@ void copyBasicVal(BasicVal src, BasicVal dest){
     assert(src != NULL && dest != NULL);
     dest->basic_type = src->basic_type;
     dest->val = src->val;
+}
+
+
+
+void addReadFunc(){
+    SemanticType type = createSemanticType(FUNC);
+    char* name = "read";
+    strcpy(type->val.function->name, name);
+    type->val.function->type = createSemanticType(BASIC);
+    type->val.function->type->val.basic_val->basic_type = BASIC_INT;
+    addSymbolPair(name, type);
+    int index = addFunc(name);
+    Operand *operand = createOperand(OPERAND_FUNC);
+    strcpy(operand->val.string, name);
+    addOPFunc(operand, index);
+}
+
+void addWriteFunc(){
+    SemanticType type = createSemanticType(FUNC);
+    char* name = "write";
+    strcpy(type->val.function->name, name);
+    type->val.function->type = createSemanticType(BASIC);
+    type->val.function->type->val.basic_val->basic_type = BASIC_INT;
+    type->val.function->next = createArgList();
+    type->val.function->next->type = createSemanticType(BASIC);
+    type->val.function->next->type->val.basic_val->basic_type = BASIC_INT;
+    addSymbolPair(name, type);
+    int index = addFunc(name);
+    Operand *operand = createOperand(OPERAND_FUNC);
+    strcpy(operand->val.string, name);
+    addOPFunc(operand, index);
 }

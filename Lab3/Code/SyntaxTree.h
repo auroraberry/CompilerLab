@@ -5,10 +5,6 @@
 #ifndef CPLAB_SYNTAXTREE_H
 #define CPLAB_SYNTAXTREE_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
 #include "SymbolTable.h"
 
 typedef union Type
@@ -45,6 +41,8 @@ typedef struct Node
     bool is_token; 
     int child_count;
     struct Node** children; // create children nodes by count
+
+    bool is_translated; // whether it would be translated to interCode
 
     #ifdef __SYMBOLTABLE__
     SynSemanticInfo syn_semantics;

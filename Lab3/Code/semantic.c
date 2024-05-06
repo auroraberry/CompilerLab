@@ -4,11 +4,14 @@
 #include <stdbool.h>
 #include <memory.h>
 #include <assert.h>
+#include "SymbolTable.h"
+#include "SyntaxTree.h"
+#include "IR.h"
 
+extern bool handle[1000];
 
-
-bool has_handle(int lineno){
-    if(handle[lineno]){
+bool has_handle(int lineno) {
+    if (handle[lineno]) {
         return true;
     }
     handle[lineno] = true;
@@ -16,7 +19,7 @@ bool has_handle(int lineno){
 }
 
 void printError(int error_type, int lineno, char *msg) {
-    if(!has_handle(lineno)){
+    if (!has_handle(lineno)) {
         printf("Error type %d at Line %d: %s\n", error_type, lineno, msg);
     }
 }
@@ -75,7 +78,7 @@ bool functionDoubleDefinition(Node *node) {
 // exp = exp
 // node is left and right
 bool typesNotMatchInAssignOP(Node *left, Node *right) {
-    if (!isSameType(handleExp(left), handleExp(right))) {
+    if (!isSameType(left->syn_semantics.semantic_type, right->syn_semantics.semantic_type)) {
         printError(5, left->data.lineno, "the types besides assign op not match!");
         return true;
     }
@@ -85,7 +88,6 @@ bool typesNotMatchInAssignOP(Node *left, Node *right) {
 
 // exp should record if it can be left value
 bool rightValInLeftOfAssignOP(Node *node) {
-    handleExp(node);
     if (!node->syn_semantics.canBeLeftVal) {
         printError(6, node->data.lineno, "right value in the left of assign op!");
         return true;
@@ -108,15 +110,15 @@ bool OperandNotMatchOP(Node *left, Node *right, Node *op) {
     if (strcmp(op->data.specifier, "MINUS") == 0) {
         if (left == NULL) // minus x
         {
-            SemanticType type = handleExp(right);
-            if (type->kind != BASIC ) {
+            SemanticType type = right->syn_semantics.semantic_type;
+            if (type->kind != BASIC) {
                 printError(7, right->data.lineno, "operand does not match op!");
                 return true;
             }
         } else // x - y
         {
-            SemanticType left_type = handleExp(left);
-            SemanticType right_type = handleExp(right);
+            SemanticType left_type = left->syn_semantics.semantic_type;
+            SemanticType right_type = right->syn_semantics.semantic_type;
             if (left_type->kind != BASIC || right_type->kind != BASIC || !isSameType(left_type, right_type)) {
                 printError(7, right->data.lineno, "operand does not match op!");
                 return true;
@@ -125,34 +127,33 @@ bool OperandNotMatchOP(Node *left, Node *right, Node *op) {
     } else if (isLogicOP(op)) {
         if (left == NULL) // not
         {
-            SemanticType type = handleExp(right);
+            SemanticType type = right->syn_semantics.semantic_type;
             if (type->kind != BASIC || type->val.basic_val->basic_type != BASIC_INT) {
                 printError(7, right->data.lineno, "operand does not match op!");
                 return true;
             }
-        } else if(strcmp(op->data.specifier, "AND") == 0 || strcmp(op->data.specifier, "OR") == 0)// and / or
+        } else if (strcmp(op->data.specifier, "AND") == 0 || strcmp(op->data.specifier, "OR") == 0)// and / or
         {
-            SemanticType left_type = handleExp(left);
-            SemanticType right_type = handleExp(right);
+            SemanticType left_type = left->syn_semantics.semantic_type;
+            SemanticType right_type = right->syn_semantics.semantic_type;
             if (!isSameType(left_type, right_type) || left_type->kind != BASIC ||
                 left_type->val.basic_val->basic_type != BASIC_INT) {
                 printError(7, right->data.lineno, "operand does not match op!");
                 return true;
             }
-        }
-        else // relop
+        } else // relop
         {
-            SemanticType left_type = handleExp(left);
-            SemanticType right_type = handleExp(right);
-            if (!isSameType(left_type, right_type) || left_type->kind != BASIC ) {
+            SemanticType left_type = left->syn_semantics.semantic_type;
+            SemanticType right_type = right->syn_semantics.semantic_type;
+            if (!isSameType(left_type, right_type) || left_type->kind != BASIC) {
                 printError(7, right->data.lineno, "operand does not match op!");
                 return true;
             }
         }
     } else if (isArithmeticOP(op)) {
-        SemanticType left_type = handleExp(left);
-        SemanticType right_type = handleExp(right);
-        if (left_type->kind != BASIC || !isSameType(left_type, right_type) ) {
+        SemanticType left_type = left->syn_semantics.semantic_type;
+        SemanticType right_type = right->syn_semantics.semantic_type;
+        if (left_type->kind != BASIC || !isSameType(left_type, right_type)) {
             printError(7, right->data.lineno, "operand does not match op!");
             return true;
         }
@@ -163,7 +164,7 @@ bool OperandNotMatchOP(Node *left, Node *right, Node *op) {
 // Stmt → RETURN Exp SEMI
 // node is exp
 bool returnTypeNotMatchDefinition(Node *node, SemanticType return_type) {
-    SemanticType type = handleExp(node);
+    SemanticType type = node->syn_semantics.semantic_type;
     if (!isSameType(type, return_type)) {
         printError(8, node->data.lineno, "return type not match definition!");
         return true;
@@ -174,8 +175,8 @@ bool returnTypeNotMatchDefinition(Node *node, SemanticType return_type) {
 // Exp → ID LP Args RP
 // the node is the function ID, and args is handled by handleArgs
 bool argListNotMatchDefinition(Node *node, ArgList args) {
-    SemanticType type = handleExpID(node, FUNC);
-    if(type->kind == ERROR){
+    SemanticType type = node->syn_semantics.semantic_type;
+    if (type->kind == ERROR) {
         return true;
     }
     ArgList params = type->val.function->next;
@@ -198,7 +199,7 @@ bool argListNotMatchDefinition(Node *node, ArgList args) {
 // Exp → Exp LB Exp RB
 // node is exp before LB 
 bool nonArrayVariableUsingArrayAccess(Node *node) {
-    if (handleExp(node)->kind != ARRAY) {
+    if (node->syn_semantics.semantic_type->kind != ARRAY) {
         printError(10, node->data.lineno, "using [] for non-array variable!");
         return true;
     }
@@ -209,7 +210,7 @@ bool nonArrayVariableUsingArrayAccess(Node *node) {
 // () for non-function varible
 // node is ID
 bool nonFuncVariableUsingFuncCall(Node *node) {
-    if (handleExpID(node, FUNC)->kind != FUNC) {
+    if (node->syn_semantics.semantic_type->kind != FUNC) {
         printError(11, node->data.lineno, "using () for non-function variable!");
         return true;
     }
@@ -219,7 +220,7 @@ bool nonFuncVariableUsingFuncCall(Node *node) {
 // Exp → Exp LB Exp RB
 // node is exp after LB
 bool nonIntInArrayAccess(Node *node) {
-    SemanticType type = handleExp(node);
+    SemanticType type = node->syn_semantics.semantic_type;
     if (!(type->kind == BASIC && type->val.basic_val->basic_type == BASIC_INT)) {
         printError(12, node->data.lineno, "non-INT variable in []!");
         return true;
@@ -230,15 +231,16 @@ bool nonIntInArrayAccess(Node *node) {
 // exp.ID
 // node is exp
 bool nonStructVariableUsingDot(Node *node) {
-    if (handleExp(node)->kind != STRUCTURE) {
+    if (node->syn_semantics.semantic_type->kind != STRUCTURE) {
         printError(13, node->data.lineno, "non-STRUCT variable using \'.\'!");
         return true;
     }
     return false;
 }
+
 // node is ID
 bool usingNonDefinitionFiled(Node *exp, Node *id) {
-    SemanticType type = handleExp(exp);
+    SemanticType type = exp->syn_semantics.semantic_type;
     assert(type->val.structure != NULL);
     FieldList fields = type->val.structure->type->val.structure;
     while (fields != NULL) {
@@ -288,7 +290,7 @@ bool structDoubleDefinition(char *name, int lineno) {
 // Tag → ID
 // the node is ID
 // just judge the second production
-bool variableDefinitionUsingUndefinedStruct(int lineno, char* name) {
+bool variableDefinitionUsingUndefinedStruct(int lineno, char *name) {
     int index = TableContains(name);
     if (index == -1) // not find ID definition
     {
@@ -379,7 +381,7 @@ SemanticType handleStructSpecifier(Node *node) {
         type->val.structure->type->val.structure = type->val.structure->type->val.structure->next;
         // OptTag == NULL not record in symbol table
         if (node->children[1] == NULL) {}
-        // record in symbol table
+            // record in symbol table
         else {
             char *name = handleOptTag(node->children[1]);
             strcpy(type->val.structure->name, name);
@@ -425,9 +427,25 @@ void handleVarDec(Node *node) {
             char *name = (char *) malloc(strlen(node->children[0]->data.value.string_type) + 1);
             strcpy(name, node->children[0]->data.value.string_type);
             addSymbolPair(name, node->children[0]->syn_semantics.semantic_type);
+            int index = addVar(name);
+            Operand *operand = createOperand(OPERAND_VARIABLE);
+            if (specifier->kind == ARRAY) {
+                operand->is_address = true;
+                // DEC size for array
+                int size = countSize(specifier);
+                Operand *array_size = createOperand(OPERAND_SIZE);
+                array_size->val.imm_value = size;
+                operand->next = array_size;
+            }
+            strcpy(operand->val.string, name);
+            addOPVar(operand, index);
+            if (specifier->kind == ARRAY) {
+                // gen DEC array size
+                addInterCode(operand, DEC, ASSIGN_NONE);
+            }
         }
     }
-    // array definition
+        // array definition
     else {
         node->children[0]->inh_semantics.specifier_type = createSemanticType(ARRAY);
         SemanticType specifier = node->children[0]->inh_semantics.specifier_type;
@@ -444,7 +462,7 @@ SemanticType handleFunDec(Node *node) {
     if (functionDoubleDefinition(node->children[0])) {
         node->inh_semantics.specifier_type->kind = ERROR;
         node->syn_semantics.semantic_type->kind = ERROR;
-        if(node->child_count == 4){
+        if (node->child_count == 4) {
             handleVarList(node->children[2]);
         }
         return node->syn_semantics.semantic_type;
@@ -453,10 +471,26 @@ SemanticType handleFunDec(Node *node) {
     strcpy(name, node->children[0]->data.value.string_type);
     strcpy(node->inh_semantics.specifier_type->val.function->name, name);
     copySemanticType(node->inh_semantics.specifier_type, node->syn_semantics.semantic_type);
-    if(node->child_count == 4){
+    if (node->child_count == 4) {
         node->syn_semantics.semantic_type->val.function->next = handleVarList(node->children[2]);
     }
     addSymbolPair(name, node->syn_semantics.semantic_type);
+
+    // add rename function and generate inter code
+    int index = addFunc(name);
+    Operand *operand = createOperand(OPERAND_FUNC);
+    strcpy(operand->val.string, name);
+    addOPFunc(operand, index);
+    addInterCode(operand, IR_FUNC, ASSIGN_NONE);
+    if (node->child_count == 4) {
+        ArgList args = node->syn_semantics.semantic_type->val.function->next;
+        while (args != NULL) {
+            int index = containsVar(args->name);
+            assert(index != -1);
+            Operand *arg = getOPVar(index);
+            addInterCode(arg, PARAM, ASSIGN_NONE);
+        }
+    }
     return node->syn_semantics.semantic_type;
 }
 
@@ -484,7 +518,7 @@ ArgList handleParamDec(Node *node) {
 // handle statements
 void handleCompSt(Node *node) {
     SemanticType specifier = node->inh_semantics.specifier_type;
-    if(node->children[2] != NULL){
+    if (node->children[2] != NULL) {
         copySemanticType(specifier, node->children[2]->inh_semantics.specifier_type);
     }
     handleDefListInFunction(node->children[1]);
@@ -494,7 +528,7 @@ void handleCompSt(Node *node) {
 void handleStmtList(Node *node) {
     if (node != NULL) {
         copySemanticType(node->inh_semantics.specifier_type, node->children[0]->inh_semantics.specifier_type);
-        if(node->children[1] != NULL){
+        if (node->children[1] != NULL) {
             copySemanticType(node->inh_semantics.specifier_type, node->children[1]->inh_semantics.specifier_type);
         }
         handleStmt(node->children[0]);
@@ -511,6 +545,7 @@ void handleStmt(Node *node) {
         handleCompSt(node->children[0]);
     } else if (strcmp(node->children[0]->data.specifier, "RETURN") == 0) {
         copySemanticType(node->inh_semantics.specifier_type, node->children[1]->inh_semantics.specifier_type);
+        handleExp(node->children[1]);
         returnTypeNotMatchDefinition(node->children[1], node->inh_semantics.specifier_type->val.function->type);
     } else if (node->child_count == 5) {
         copySemanticType(node->inh_semantics.specifier_type, node->children[2]->inh_semantics.specifier_type);
@@ -566,7 +601,6 @@ void handleDecInFunction(Node *node) {
     if (node->child_count == 1) {
         handleVarDec(node->children[0]);
     } else {
-        // how to handle int i[1] = x + 1; TODO()
         SemanticType assign_type = handleExp(node->children[2]);
         if (!isSameType(specifier, assign_type)) {
             printError(5, node->data.lineno, "the types besides assign op not match!");
@@ -576,12 +610,11 @@ void handleDecInFunction(Node *node) {
 }
 
 
-
 // add the definition in the tail of the fields
 void handleDefListInStruct(Node *node, FieldList fields) {
     if (node != NULL) {
         handleDefInStruct(node->children[0], fields);
-        if(node->children[1] != NULL){
+        if (node->children[1] != NULL) {
             copySemanticType(node->inh_semantics.specifier_type, node->children[1]->inh_semantics.specifier_type);
         }
         handleDefListInStruct(node->children[1], fields);
@@ -648,55 +681,107 @@ void handleVarDecInStruct(Node *node, FieldList fields) {
 // handle expression
 // setting whether the node can be left value
 SemanticType handleExp(Node *node) {
+    if(node->syn_semantics.semantic_type->kind != NONE){
+        return node->syn_semantics.semantic_type;
+    }
     if (node->child_count == 1) // ID INT FLOAT
     {
         if (strcmp(node->children[0]->data.specifier, "ID") == 0) {
-            SemanticType type = handleExpID(node->children[0], NONE); // except function
+            SemanticType type = handleExpID(node->children[0], NONE);// except function
+            copySemanticType(type, node->syn_semantics.semantic_type);
             if (type->kind != ERROR) {
                 node->syn_semantics.canBeLeftVal = true;
             }
+            if (node->is_translated) {
+                return type;
+            }
+            Operand *tem = getTemVar(true);
+            int index = containsVar(node->children[0]->data.value.string_type);
+            assert(index != -1);
+            Operand *var = getOPVar(index);
+            tem->next = var;
+            addInterCode(tem, IR_ASSIGN, ASSIGN_NONE);
+            node->is_translated = true;
             return type;
         } else if (strcmp(node->children[0]->data.specifier, "INT") == 0) {
-            return handleExpINT(node->children[0]);
+            SemanticType type = handleExpINT(node->children[0]);
+            copySemanticType(type, node->syn_semantics.semantic_type);
+            if (node->is_translated) {
+                return type;
+            }
+            Operand *tem = getTemVar(true);
+            Operand *imm = createOperand(OPERAND_IMM);
+            imm->val.imm_value = type->val.basic_val->val.int_val;
+            tem->next = imm;
+            addInterCode(tem, IR_ASSIGN, ASSIGN_NONE);
+            node->is_translated = true;
+            return type;
         } else if (strcmp(node->children[0]->data.specifier, "FLOAT") == 0) {
-            return handleExpFLOAT(node->children[0]);
+            SemanticType type = handleExpFLOAT(node->children[0]);
+            copySemanticType(type, node->syn_semantics.semantic_type);
+            return type;
         }
-        return createSemanticType(ERROR);
+        SemanticType type = createSemanticType(ERROR);
+        copySemanticType(type, node->syn_semantics.semantic_type);
+        return type;
     }
         // NOT / MINUS
     else if (node->child_count == 2) {
         if (strcmp(node->children[0]->data.specifier, "NOT") == 0) {
-            return handleExpNOT(node->children[1], node->children[0]);
+            SemanticType type = handleExpNOT(node->children[1], node->children[0]);
+            copySemanticType(type, node->syn_semantics.semantic_type);
+            return type;
         } else if (strcmp(node->children[0]->data.specifier, "MINUS") == 0) {
-            return handleExpMinus(node->children[1], node->children[0]);
+            SemanticType type = handleExpMinus(node->children[1], node->children[0]);
+            copySemanticType(type, node->syn_semantics.semantic_type);
+            return type;
         }
         return createSemanticType(ERROR);
     } else if (node->child_count == 3) {
         if (strcmp(node->children[1]->data.specifier, "ASSIGNOP") == 0) {
-            node->syn_semantics.canBeLeftVal = true;
-            return handleExpASSIGNOP(node->children[0], node->children[2]);
+            SemanticType type = handleExpASSIGNOP(node->children[0], node->children[2]);
+            if(type->kind != ERROR){
+              node->syn_semantics.canBeLeftVal = true;
+            }
+            copySemanticType(type, node->syn_semantics.semantic_type);
+            return type;
         } else if (strcmp(node->children[1]->data.specifier, "AND") == 0) {
-            return handleExpAND(node->children[0], node->children[2], node->children[1]);
+            SemanticType type = handleExpAND(node->children[0], node->children[2], node->children[1]);
+            copySemanticType(type, node->syn_semantics.semantic_type);
+            return type;
         } else if (strcmp(node->children[1]->data.specifier, "OR") == 0) {
-            return handleExpOR(node->children[0], node->children[2], node->children[1]);
+            SemanticType type = handleExpOR(node->children[0], node->children[2], node->children[1]);
+            copySemanticType(type, node->syn_semantics.semantic_type);
+            return type;
         } else if (strcmp(node->children[1]->data.specifier, "RELOP") == 0) {
-            return handleExpRELOP(node->children[0], node->children[2], node->children[1]);
+            SemanticType type = handleExpRELOP(node->children[0], node->children[2], node->children[1]);
+            copySemanticType(type, node->syn_semantics.semantic_type);
+            return type;
         } else if (strcmp(node->children[1]->data.specifier, "LP") == 0) {
-            return handleExpFuncCall(node);
+            handleExpFuncCall(node);
+            return node->syn_semantics.semantic_type;
         } else if (strcmp(node->children[1]->data.specifier, "Exp") == 0) {
-            SemanticType type = handleExp(node->children[1]);
+            SemanticType type;
+            if(node->children[1]->syn_semantics.semantic_type->kind == NONE){
+                handleExp(node->children[1]);
+            }
+            type = node->children[1]->syn_semantics.semantic_type;
+            copySemanticType(type, node->syn_semantics.semantic_type);
             if (type->kind != ERROR) {
                 node->syn_semantics.canBeLeftVal = node->children[1]->syn_semantics.canBeLeftVal;
             }
             return type;
         } else if (strcmp(node->children[1]->data.specifier, "DOT") == 0) {
-            SemanticType type = handleExpStruct(node);
+            handleExpStruct(node);
+            SemanticType type = node->syn_semantics.semantic_type;
             if (type->kind != ERROR) {
                 node->syn_semantics.canBeLeftVal = true;
             }
             return type;
         } else {
-            return handleExpMATH(node->children[0], node->children[2], node->children[1]);
+            SemanticType type = handleExpMATH(node->children[0], node->children[2], node->children[1]);
+            copySemanticType(type, node->syn_semantics.semantic_type);
+            return type;
         }
     } else {
         if (strcmp(node->children[0]->data.specifier, "ID") == 0) {
@@ -712,79 +797,122 @@ SemanticType handleExp(Node *node) {
 }
 
 SemanticType handleExpASSIGNOP(Node *left, Node *right) {
-    if (typesNotMatchInAssignOP(left, right)) {
-        return createSemanticType(ERROR);
-    } else if (rightValInLeftOfAssignOP(left)) {
-        return createSemanticType(ERROR);
-    } else {
-        return handleExp((left));
+    if(left->syn_semantics.semantic_type->kind != NONE){
+        return left->syn_semantics.semantic_type;
+    }
+    handleExp(left);
+    handleExp(right);
+    if (typesNotMatchInAssignOP(left, right) || rightValInLeftOfAssignOP(left)) {
+        SemanticType type = createSemanticType(ERROR);
+        return type;
+    }else {
+        return left->syn_semantics.semantic_type;
     }
 }
 
 SemanticType handleExpAND(Node *left, Node *right, Node *and) {
-    if (OperandNotMatchOP(left, right, and)) {
-        return createSemanticType(ERROR);
-    } else {
-        SemanticType type = createSemanticType(BASIC);
-        type->val.basic_val->basic_type = BASIC_INT;
-        return type;
+    if(left->syn_semantics.semantic_type->kind != NONE){
+        return left->syn_semantics.semantic_type;
     }
+    SemanticType type;
+    handleExp(left);
+    handleExp(right);
+    if (OperandNotMatchOP(left, right, and)) {
+        type = createSemanticType(ERROR);
+    } else {
+        type = createSemanticType(BASIC);
+        type->val.basic_val->basic_type = BASIC_INT;
+    }
+    return type;
 }
 
 SemanticType handleExpOR(Node *left, Node *right, Node *or) {
-    if (OperandNotMatchOP(left, right, or)) {
-        return createSemanticType(ERROR);
-    } else {
-        SemanticType type = createSemanticType(BASIC);
-        type->val.basic_val->basic_type = BASIC_INT;
-        return type;
+    if(left->syn_semantics.semantic_type->kind != NONE){
+        return left->syn_semantics.semantic_type;
     }
+    SemanticType type;
+    handleExp(left);
+    handleExp(right);
+    if (OperandNotMatchOP(left, right, or)) {
+        type = createSemanticType(ERROR);
+    } else {
+        type = createSemanticType(BASIC);
+        type->val.basic_val->basic_type = BASIC_INT;
+    }
+    return type;
 }
 
 SemanticType handleExpRELOP(Node *left, Node *right, Node *relop) {
-    if (OperandNotMatchOP(left, right, relop)) {
-        return createSemanticType(ERROR);
-    } else {
-        SemanticType type = createSemanticType(BASIC);
-        type->val.basic_val->basic_type = BASIC_INT;
-        return type;
+    if(left->syn_semantics.semantic_type->kind != NONE){
+        return left->syn_semantics.semantic_type;
     }
+    SemanticType type;
+    handleExp(left);
+    handleExp(right);
+    if (OperandNotMatchOP(left, right, relop)) {
+        type = createSemanticType(ERROR);
+    } else {
+        type = createSemanticType(BASIC);
+        type->val.basic_val->basic_type = BASIC_INT;
+    }
+    return type;
 }
 
 SemanticType handleExpMATH(Node *left, Node *right, Node *op) {
-    if (OperandNotMatchOP(left, right, op)) {
-        return createSemanticType(ERROR);
-    } else {
-        return handleExp(left);
+    if(left->syn_semantics.semantic_type->kind != NONE){
+        return left->syn_semantics.semantic_type;
     }
+    SemanticType type;
+    handleExp(left);
+    handleExp(right);
+    if (OperandNotMatchOP(left, right, op)) {
+        type = createSemanticType(ERROR);
+    } else {
+        type = left->syn_semantics.semantic_type;
+    }
+    return type;
 }
 
 
 SemanticType handleExpMinus(Node *node, Node *minus) {
-    if (OperandNotMatchOP(NULL, node, minus)) {
-        return createSemanticType(ERROR);
-    } else {
-        return handleExp(node);
+    if(node->syn_semantics.semantic_type->kind != NONE){
+        return node->syn_semantics.semantic_type;
     }
+    SemanticType type;
+    handleExp(node);
+    if (OperandNotMatchOP(NULL, node, minus)) {
+        type = createSemanticType(ERROR);
+    } else {
+        type = node->syn_semantics.semantic_type;
+    }
+    return type;
 }
 
 SemanticType handleExpNOT(Node *node, Node *not) {
-    if (OperandNotMatchOP(NULL, node, not)) {
-        return createSemanticType(ERROR);
-    } else {
-        return handleExp(node);
+    if(node->syn_semantics.semantic_type->kind != NONE){
+        return node->syn_semantics.semantic_type;
     }
+    SemanticType type;
+    handleExp(node);
+    if (OperandNotMatchOP(NULL, node, not)) {
+        type = createSemanticType(ERROR);
+    } else {
+        type = node->syn_semantics.semantic_type;
+    }
+    return type;
 }
 
 SemanticType handleExpFuncCall(Node *node) {
+    handleExpID(node->children[0], FUNC);
     if (nonFuncVariableUsingFuncCall(node->children[0])) {
         return createSemanticType(ERROR);
     }
-    SemanticType function = handleExpID(node->children[0], FUNC);
+    SemanticType function = node->syn_semantics.semantic_type;
     // copy return var type and return
     copySemanticType(function->val.function->type, node->syn_semantics.semantic_type);
     if (node->child_count == 4) {
         ArgList args = handleArgs(node->children[2]);
+        node->syn_semantics.semantic_type->val.function->next = args;
         if (argListNotMatchDefinition(node->children[0], args)) {
             return createSemanticType(ERROR);
         }
@@ -793,60 +921,85 @@ SemanticType handleExpFuncCall(Node *node) {
 }
 
 SemanticType handleExpArray(Node *node) {
-    if (nonArrayVariableUsingArrayAccess(node->children[0])) {
-        return createSemanticType(ERROR);
+    if (nonArrayVariableUsingArrayAccess(node->children[0]) || nonIntInArrayAccess(node->children[2])) {
+        SemanticType type = createSemanticType(ERROR);
+        copySemanticType(type, node->syn_semantics.semantic_type);
+        return type;
     }
-    if (nonIntInArrayAccess(node->children[2])) {
-        return createSemanticType(ERROR);
+    else{
+        SemanticType type = handleExp(node->children[0])->val.array->elem;
+        copySemanticType(type, node->syn_semantics.semantic_type);
+        return type;
     }
-    return handleExp(node->children[0])->val.array->elem;
 }
 
 SemanticType handleExpStruct(Node *node) {
-    if (nonStructVariableUsingDot(node->children[0])) {
-        return createSemanticType(ERROR);
-    }
-    if (usingNonDefinitionFiled(node->children[0], node->children[2])) {
-        return createSemanticType(ERROR);
+    if (nonStructVariableUsingDot(node->children[0]) || usingNonDefinitionFiled(node->children[0], node->children[2])) {
+        SemanticType type = createSemanticType(ERROR);
+        copySemanticType(type, node->syn_semantics.semantic_type);
+        return type;
     }
     SemanticType structure = handleExp(node->children[0]);
     FieldList head = structure->val.structure->type->val.structure;
     while (head != NULL) {
         if (strcmp(head->name, node->children[2]->data.value.string_type) == 0) {
-            return head->type;
+            copySemanticType(head->type, node->syn_semantics.semantic_type);
+            return node->syn_semantics.semantic_type;
         }
         head = head->next;
     }
-    return createSemanticType(ERROR);
+    SemanticType type = createSemanticType(ERROR);
+    copySemanticType(type, node->syn_semantics.semantic_type);
+    return type;
 }
 
 SemanticType handleExpID(Node *node, enum Kind kind) {
+    if(node->syn_semantics.semantic_type->kind != NONE){
+        return node->syn_semantics.semantic_type;
+    }
+    SemanticType type;
     switch (kind) {
         case FUNC:
             if (functionUsageBeforeDefinition(node)) {
-                return createSemanticType(ERROR);
+                type = createSemanticType(ERROR);
+                copySemanticType(type, node->syn_semantics.semantic_type);
+                return type;
             }
-            return TableGet(node->data.value.string_type)->type;
+            type = TableGet(node->data.value.string_type)->type;
+            copySemanticType(type, node->syn_semantics.semantic_type);
+            return type;
 
         default:
             if (variableUsageBeforeDefinition(node)) {
-                return createSemanticType(ERROR);
+                type = createSemanticType(ERROR);
+                copySemanticType(type, node->syn_semantics.semantic_type);
+                return type;
             }
-            return TableGet(node->data.value.string_type)->type;
+            type = TableGet(node->data.value.string_type)->type;
+            copySemanticType(type, node->syn_semantics.semantic_type);
+            return type;
     }
 }
 
 SemanticType handleExpINT(Node *node) {
+    if(node->syn_semantics.semantic_type->kind != NONE){
+        return node->syn_semantics.semantic_type;
+    }
     SemanticType type = createSemanticType(BASIC);
     type->val.basic_val->basic_type = BASIC_INT;
     type->val.basic_val->val.int_val = node->data.value.int_type;
+    copySemanticType(type, node->syn_semantics.semantic_type);
     return type;
 }
 
 SemanticType handleExpFLOAT(Node *node) {
+    if(node->syn_semantics.semantic_type->kind != NONE){
+        return node->syn_semantics.semantic_type;
+    }
     SemanticType type = createSemanticType(BASIC);
     type->val.basic_val->basic_type = BASIC_FLOAT;
     type->val.basic_val->val.float_val = node->data.value.float_type;
+    copySemanticType(type, node->syn_semantics.semantic_type);
     return type;
 }
 
@@ -854,10 +1007,37 @@ SemanticType handleExpFLOAT(Node *node) {
 ArgList handleArgs(Node *node) {
     ArgList result = createArgList();
     copySemanticType(handleExp(node->children[0]), result->type);
+    Operand *temVar = getTemVar(false);
     if (node->child_count == 3) {
         result->next = handleArgs(node->children[2]);
     }
+    addInterCode(temVar, ARG, ASSIGN_NONE);
     return result;
+}
+
+
+
+int countSize(SemanticType type) {
+    int size = 0;
+    switch (type->kind) {
+        case BASIC:
+            size = 4;
+            break;
+        case ARRAY:
+            size = type->val.array->size;
+            size *= countSize(type->val.array->elem);
+            break;
+        case STRUCTURE:
+            FieldList fields = type->val.structure->type->val.structure;
+            while (fields != NULL) {
+                size += countSize(fields->type);
+                fields = fields->next;
+            }
+            break;
+        default:
+            assert(1 == 1); // can not count in other type
+    }
+    return size;
 }
 
 

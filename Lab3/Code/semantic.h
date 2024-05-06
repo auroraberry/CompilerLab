@@ -3,7 +3,6 @@
 
 #include "SymbolTable.h"
 #include "SyntaxTree.h"
-#include <stdbool.h>
 
 
 
@@ -142,6 +141,12 @@ SemanticType handleExpINT(Node* node); // node is INT
 SemanticType handleExpFLOAT(Node* node); // node is FLOAT
 
 ArgList handleArgs(Node* node);
+
+
+
+int countSize(SemanticType type);
+
+
 
 
 

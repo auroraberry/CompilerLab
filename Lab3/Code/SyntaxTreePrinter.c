@@ -1,5 +1,5 @@
 #include "SyntaxTreePrinter.h"
-
+#include "stdio.h"
 
 void printSyntaxTree(Node* node, int depth){
     if(node == NULL){

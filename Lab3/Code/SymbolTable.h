@@ -1,5 +1,7 @@
 #ifndef __SYMBOLTABLE__
 #define __SYMBOLTABLE__
+
+#include "stdbool.h"
 #include "ArrayList.h"
 
 enum Kind {BASIC, ARRAY, STRUCTURE, FUNC, ERROR, NONE};
@@ -63,7 +65,7 @@ struct FieldList_
 struct ArgList_
 {
     char* name; //function name or parameter name
-    SemanticType type; // return type with funtion name 
+    SemanticType type; // return type with function name
     ArgList next; // the head of the arglist is return variable
 };
 
@@ -81,7 +83,6 @@ ArgList createArgList();
 SymbolPair createSymbolPair();
 char* createCharName();
 
-bool handle[1000];
 
 extern SymbolTable symbol_table;
 
@@ -109,5 +110,8 @@ void copyStructure(FieldList src, FieldList dest);
 void copyArray(Array src, Array dest);
 void copyFunction(ArgList src, ArgList dest);
 void copyBasicVal(BasicVal src, BasicVal dest);
+
+void addReadFunc();
+void addWriteFunc();
 
 #endif

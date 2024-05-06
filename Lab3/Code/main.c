@@ -4,6 +4,7 @@
 #include "SyntaxTree.h"
 #include "SyntaxTreePrinter.h"
 #include "semantic.h"
+#include "IR.h"
 
 extern int yyparse();
 extern void yyrestart(FILE*); /* yyrestart(f)函数是Flex提供的库函数，它可以让Flex将其输入文件的文件指针yyin设置为f
@@ -29,6 +30,10 @@ int main(int argc, char **argv) {
         #ifdef __SEMANTIC__
         initTable();
         handleProgram(root);
+        #endif
+        #ifdef __IR__
+        initIR();
+        printInterCodes();
         #endif
     }
 
