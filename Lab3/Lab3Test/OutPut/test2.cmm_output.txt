@@ -1,1 +1,43 @@
-Error type 2 at Line 4: function usage before definition!
+FUNCTION func2 :
+PARAM var0
+tem0 := var0
+tem1 := #1
+IF tem0 == tem1 GOTO label0
+GOTO label1
+LABEL label0 :
+tem2 := var0
+RETURN tem2
+LABEL label1 :
+tem4 := var0
+tem7 := var0
+tem8 := #1
+tem6 := tem7 - tem8
+ARG tem6
+tem5 := CALL func2
+tem3 := tem4 * tem5
+RETURN tem3
+LABEL label2 :
+FUNCTION main :
+READ tem10
+var1 := tem10
+tem9 := var1
+tem11 := var1
+tem12 := #1
+IF tem11 > tem12 GOTO label3
+GOTO label4
+LABEL label3 :
+tem15 := var1
+ARG tem15
+tem14 := CALL func2
+var2 := tem14
+tem13 := var2
+LABEL label4 :
+tem17 := #1
+var2 := tem17
+tem16 := var2
+LABEL label5 :
+tem19 := var2
+WRITE tem19
+tem18 := #0
+tem20 := #0
+RETURN tem20

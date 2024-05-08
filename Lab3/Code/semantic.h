@@ -83,64 +83,7 @@ bool variableDefinitionUsingUndefinedStruct(int lineno, char* name);
 
 
 
-// handle program
-void handleProgram(Node* node);
-void handleExtDefList(Node* node);
-void handleExtDef(Node* node); // definition -> record in symbol table
-void handleExtDecList(Node* node);
-
-
-// handle specifier
-SemanticType handleSpecifier(Node* node);
-SemanticType handleStructSpecifier(Node* node);
-char* handleOptTag(Node* node);
-char* handleTag(Node* node);
-
-
-// handle declaration
-// return pair.name is NULL, if it meet error
-void handleVarDec(Node* node);
-void handleVarDecInStruct(Node* node, FieldList fields);
-SemanticType handleFunDec(Node* node);
-ArgList handleVarList(Node* node);
-ArgList handleParamDec(Node* node);
-
-
-// handle statements
-void handleCompSt(Node* node);
-void handleStmtList(Node* node);
-void handleStmt(Node* node);
-
-
-// handle local definition
-void handleDefListInStruct(Node* node, FieldList fields);
-void handleDefInStruct(Node* node, FieldList fields);
-void handleDecListInStruct(Node* node, FieldList fields);
-void handleDecInStruct(Node* node, FieldList fields);
-void handleDefListInFunction(Node* node);
-void handleDefInFunction(Node* node);
-void handleDecListInFunction(Node* node);
-void handleDecInFunction(Node* node);
-char *getVarDecIDName(Node *node);
-
-// handle expression
-// setting whether the node can be left value
-SemanticType handleExp(Node* node);
-SemanticType handleExpASSIGNOP(Node* left, Node* right);
-SemanticType handleExpAND(Node* left, Node* right, Node* and);
-SemanticType handleExpOR(Node* left, Node* right, Node* or);
-SemanticType handleExpRELOP(Node* left, Node* right, Node* relop);
-SemanticType handleExpMATH(Node* left, Node* right, Node* op);
-SemanticType handleExpMinus(Node* node, Node* minus); // node is right exp
-SemanticType handleExpNOT(Node* node, Node* not); // node is right exp
-SemanticType handleExpFuncCall(Node* node); // node is father exp
-SemanticType handleExpArray(Node* node); // node is father exp
-SemanticType handleExpStruct(Node* node); // node is father exp
-SemanticType handleExpID(Node* node, enum Kind kind); // node is ID
-SemanticType handleExpINT(Node* node); // node is INT
-SemanticType handleExpFLOAT(Node* node); // node is FLOAT
-
-ArgList handleArgs(Node* node);
+void semanticAnalysis(Node* root);
 
 
 

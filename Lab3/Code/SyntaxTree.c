@@ -25,7 +25,6 @@ Node* createTokenNode(int ln, Type val, char* spec){
     node->is_token = true;
     node->child_count = 0;
     node->children = NULL;
-    node->is_translated = false;
 
     #ifdef __SYMBOLTABLE__
         initSemanticInfo(node);
@@ -47,8 +46,7 @@ Node* createVariableNode(int ln, Type val, char* spec, int count, Node** kids){
     for(int i = 0; i < count; i++){
         node->children[i] = kids[i];
     }
-    node->is_translated = false;
-
+    
     #ifdef __SYMBOLTABLE__
         initSemanticInfo(node);
     #endif

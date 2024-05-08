@@ -78,19 +78,13 @@ Operand* getLabel(bool is_new);
 
 void addInterCode(Operand *operands, enum IR_OPERATION kind, enum ASSIGN_TYPE type);
 
-void printInterCode(InterCode *interCode);
-
 void printInterCodes();
 
 Operand *createOperand(enum OPERAND_KIND kind);
 
-void transExp(Node* node, Operand* place); // node is exp
-void transStmt(Node* node);
-void transCompSt(Node* node);
-void transCond(Node* node, Operand* label_true, Operand* label_false, char* op);
-void transFuncCall(Node* node, Operand* place);
-void transArgs(Node* node, ArgList args);
+void generateIR(Node* root);
 
+int countSize(SemanticType type);
 
 
 #endif

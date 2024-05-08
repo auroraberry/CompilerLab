@@ -27,14 +27,11 @@ int main(int argc, char **argv) {
     yyparse();
     if(!lexical_error && !syntax_error){
         //printSyntaxTree(root, 0);
-        #ifdef __SEMANTIC__
-        initTable();
-        handleProgram(root);
-        #endif
-        #ifdef __IR__
         initIR();
-        printInterCodes();
-        #endif
+        initTable();
+        semanticAnalysis(root);
+        generateIR(root);
+        //printInterCodes();
     }
 
     return 0;

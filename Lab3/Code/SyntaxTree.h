@@ -42,8 +42,6 @@ typedef struct Node
     int child_count;
     struct Node** children; // create children nodes by count
 
-    bool is_translated; // whether it would be translated to interCode
-
     #ifdef __SYMBOLTABLE__
     SynSemanticInfo syn_semantics;
     InhSemanticInfo inh_semantics; //inherited attribute
