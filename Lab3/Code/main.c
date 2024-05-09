@@ -15,9 +15,10 @@ extern FILE* yyin;
 extern Node* root;
 extern bool lexical_error;
 extern bool syntax_error;
+extern bool has_ir_error;
 
 int main(int argc, char **argv) {
-    if (argc <= 1) return 1;
+    if (argc <= 2) return 1;
     FILE *f = fopen(argv[1], "r");
     if (!f) {
         perror(argv[1]);
@@ -30,8 +31,11 @@ int main(int argc, char **argv) {
         initIR();
         initTable();
         semanticAnalysis(root);
-        generateIR(root);
-        //printInterCodes();
+        generateIR(root, argv[2]);
+        if(!has_ir_error) {
+            //printf("not has ir error\n");
+            printInterCodes();
+        }
     }
 
     return 0;

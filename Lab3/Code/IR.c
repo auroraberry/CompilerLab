@@ -7,12 +7,15 @@
 #include "SymbolTable.h"
 #include "SyntaxTree.h"
 #include "IR.h"
+#include "stdarg.h"
 
+bool has_ir_error = false;
 
 static void handleProgram(Node *node);
 static void handleExtDefList(Node *node);
 static void handleExtDef(Node *node); // definition -> record in symbol table
 static void handleExtDecList(Node *node);
+static void handleSpecifier(Node *node);
 static void handleVarDec(Node *node);
 static void handleVarDecInStruct(Node *node, FieldList fields);
 static void handleFunDec(Node *node);
@@ -27,16 +30,24 @@ static void handleDecListInFunction(Node *node);
 static void handleDecInFunction(Node *node);
 static void handleExp(Node *node, Operand *place);
 static void handleExpFuncCall(Node *node, Operand *place); // node is father exp
-static void handeExpArray(Node* node, Operand* size);
-static void handleArgs(Node *node, Operand* args);
+static void handleExpArray(Node* node, Operand *place);
+static void handleArgs(Node *node, Args* args);
 static void handleCond(Node *exp, Operand *label_true, Operand *label_false);
 
 static char *handleOptTag(Node *node);
 static char *handleTag(Node *node);
 static char *getVarDecIDName(Node *node);
 
-void generateIR(Node *root) {
+char* filename;
+FILE *file;
+
+void generateIR(Node *root, char* name) {
+    filename = (char*)malloc(strlen(name)+1);
+    strcpy(filename, name);
+    file = fopen(filename, "w");
+    assert(file != NULL);
     handleProgram(root);
+    fclose(file);
 }
 
 int tem_count = 0;
@@ -55,6 +66,7 @@ ArrayList *temVars;
 ArrayList *interCodes;
 
 void initIR() {
+
     ir_functions = ArrayListCreate(50, 20);
     ir_variables = ArrayListCreate(50, 100);
     interCodes = ArrayListCreate(sizeof(InterCode), 100);
@@ -135,28 +147,28 @@ static char *handleOperand(Operand *operand) {
 void printInterCode(InterCode *interCode) {
     switch (interCode->operation) {
         case IR_LABEL:
-            printf("LABEL %s :\n", handleOperand(interCode->operands));
+            fprintf(file, "LABEL %s :\n", handleOperand(interCode->operands[0]));
             break;
         case IR_FUNC:
-            printf("FUNCTION %s :\n", handleOperand(interCode->operands));
+            fprintf(file, "FUNCTION %s :\n", handleOperand(interCode->operands[0]));
             break;
         case IR_ASSIGN: {
             switch (interCode->type) {
                 case GET_ADDR:
-                    printf("%s := &%s\n", handleOperand(interCode->operands), handleOperand(interCode->operands->next));
+                    fprintf(file, "%s := &%s\n", handleOperand(interCode->operands[0]), handleOperand(interCode->operands[1]));
                     break;
                 case GET_VAL:
-                    printf("%s := *%s\n", handleOperand(interCode->operands), handleOperand(interCode->operands->next));
+                    fprintf(file, "%s := *%s\n", handleOperand(interCode->operands[0]), handleOperand(interCode->operands[1]));
                     break;
                 case SET_VAL:
-                    printf("*%s := %s\n", handleOperand(interCode->operands), handleOperand(interCode->operands->next));
+                    fprintf(file, "*%s := %s\n", handleOperand(interCode->operands[0]), handleOperand(interCode->operands[1]));
                     break;
                 case BOTH_POINTER:
-                    printf("*%s := *%s\n", handleOperand(interCode->operands),
-                           handleOperand(interCode->operands->next));
+                    fprintf(file, "*%s := *%s\n", handleOperand(interCode->operands[0]),
+                            handleOperand(interCode->operands[1]));
                     break;
                 default:
-                    printf("%s := %s\n", handleOperand(interCode->operands), handleOperand(interCode->operands->next));
+                    fprintf(file, "%s := %s\n", handleOperand(interCode->operands[0]), handleOperand(interCode->operands[1]));
                     break;
             }
             break;
@@ -164,78 +176,180 @@ void printInterCode(InterCode *interCode) {
         case IR_ADD:
             switch (interCode->type) {
                 case GET_ADDR:
-                    printf("%s := &%s + %s\n", handleOperand(interCode->operands),
-                           handleOperand(interCode->operands->next), handleOperand(interCode->operands->next->next));
+                    fprintf(file, "%s := &%s + %s\n", handleOperand(interCode->operands[0]),
+                            handleOperand(interCode->operands[1]), handleOperand(interCode->operands[2]));
                     break;
                 default:
-                    printf("%s := %s + %s\n", handleOperand(interCode->operands),
-                           handleOperand(interCode->operands->next), handleOperand(interCode->operands->next->next));
+                    fprintf(file, "%s := %s + %s\n", handleOperand(interCode->operands[0]),
+                            handleOperand(interCode->operands[1]), handleOperand(interCode->operands[2]));
                     break;
             }
             break;
         case IR_MUL:
-            printf("%s := %s * %s\n", handleOperand(interCode->operands), handleOperand(interCode->operands->next),
-                   handleOperand(interCode->operands->next->next));
+            fprintf(file, "%s := %s * %s\n", handleOperand(interCode->operands[0]), handleOperand(interCode->operands[1]),
+                    handleOperand(interCode->operands[2]));
             break;
         case IR_SUB:
-            printf("%s := %s - %s\n", handleOperand(interCode->operands), handleOperand(interCode->operands->next),
-                   handleOperand(interCode->operands->next->next));
+            fprintf(file, "%s := %s - %s\n", handleOperand(interCode->operands[0]), handleOperand(interCode->operands[1]),
+                    handleOperand(interCode->operands[2]));
             break;
         case IR_DIV:
-            printf("%s := %s / %s\n", handleOperand(interCode->operands), handleOperand(interCode->operands->next),
-                   handleOperand(interCode->operands->next->next));
+            fprintf(file, "%s := %s / %s\n", handleOperand(interCode->operands[0]), handleOperand(interCode->operands[1]),
+                    handleOperand(interCode->operands[2]));
             break;
         case GOTO:
-            printf("GOTO %s\n", handleOperand(interCode->operands));
+            fprintf(file, "GOTO %s\n", handleOperand(interCode->operands[0]));
             break;
         case IR_IF:
-            printf("IF %s %s %s ", handleOperand(interCode->operands), handleOperand(interCode->operands->next),
-                   handleOperand(interCode->operands->next->next));
+            fprintf(file, "IF %s %s %s ", handleOperand(interCode->operands[0]), handleOperand(interCode->operands[1]),
+                    handleOperand(interCode->operands[2]));
             break;
         case IR_RETURN:
-            printf("RETURN %s\n\n", handleOperand(interCode->operands));
+            fprintf(file, "RETURN %s\n", handleOperand(interCode->operands[0]));
             break;
         case DEC:
-            printf("DEC %s %s\n", handleOperand(interCode->operands), handleOperand(interCode->operands->next));
+            fprintf(file, "DEC %s %s\n", handleOperand(interCode->operands[0]), handleOperand(interCode->operands[1]));
             break;
         case ARG:
             switch (interCode->type) {
                 case GET_ADDR:
-                    printf("ARG &%s\n", handleOperand(interCode->operands));
+                    fprintf(file, "ARG &%s\n", handleOperand(interCode->operands[0]));
                     break;
                 default:
-                    printf("ARG %s\n", handleOperand(interCode->operands));
+                    fprintf(file, "ARG %s\n", handleOperand(interCode->operands[0]));
                     break;
             }
             break;
         case CALL:
-            if(interCode->operands->kind == OPERAND_FUNC){
-                printf("CALL %s\n", handleOperand(interCode->operands));
+            if(interCode->operands[0]->kind == OPERAND_FUNC){
+                fprintf(file, "CALL %s\n", handleOperand(interCode->operands[0]));
             }
             else{
-                printf("%s := CALL %s\n", handleOperand(interCode->operands), handleOperand(interCode->operands->next));
+                fprintf(file, "%s := CALL %s\n", handleOperand(interCode->operands[0]), handleOperand(interCode->operands[1]));
             }
             break;
         case PARAM:
-            printf("PARAM %s\n", handleOperand(interCode->operands));
+            fprintf(file, "PARAM %s\n", handleOperand(interCode->operands[0]));
             break;
         case READ:
-            printf("READ %s\n", handleOperand(interCode->operands));
+            fprintf(file, "READ %s\n", handleOperand(interCode->operands[0]));
             break;
         case WRITE:
-            printf("WRITE %s\n", handleOperand(interCode->operands));
+            fprintf(file, "WRITE %s\n", handleOperand(interCode->operands[0]));
             break;
         default:
-            printf("ERROR in printInterCode\n");
+            fprintf(file, "ERROR in printInterCode\n");
+            break;
+    }
+}
+
+void printInterCodeToStd(InterCode *interCode) {
+    switch (interCode->operation) {
+        case IR_LABEL:
+            printf("LABEL %s :\n", handleOperand(interCode->operands[0]));
+            break;
+        case IR_FUNC:
+            printf("FUNCTION %s :\n", handleOperand(interCode->operands[0]));
+            break;
+        case IR_ASSIGN: {
+            switch (interCode->type) {
+                case GET_ADDR:
+                    printf("%s := &%s\n", handleOperand(interCode->operands[0]), handleOperand(interCode->operands[1]));
+                    break;
+                case GET_VAL:
+                    printf("%s := *%s\n", handleOperand(interCode->operands[0]), handleOperand(interCode->operands[1]));
+                    break;
+                case SET_VAL:
+                    printf("*%s := %s\n", handleOperand(interCode->operands[0]), handleOperand(interCode->operands[1]));
+                    break;
+                case BOTH_POINTER:
+                    printf("*%s := *%s\n", handleOperand(interCode->operands[0]),
+                            handleOperand(interCode->operands[1]));
+                    break;
+                default:
+                    printf("%s := %s\n", handleOperand(interCode->operands[0]), handleOperand(interCode->operands[1]));
+                    break;
+            }
+            break;
+        }
+        case IR_ADD:
+            switch (interCode->type) {
+                case GET_ADDR:
+                    printf("%s := &%s + %s\n", handleOperand(interCode->operands[0]),
+                            handleOperand(interCode->operands[1]), handleOperand(interCode->operands[2]));
+                    break;
+                default:
+                    printf("%s := %s + %s\n", handleOperand(interCode->operands[0]),
+                            handleOperand(interCode->operands[1]), handleOperand(interCode->operands[2]));
+                    break;
+            }
+            break;
+        case IR_MUL:
+            printf("%s := %s * %s\n", handleOperand(interCode->operands[0]), handleOperand(interCode->operands[1]),
+                    handleOperand(interCode->operands[2]));
+            break;
+        case IR_SUB:
+            printf("%s := %s - %s\n", handleOperand(interCode->operands[0]), handleOperand(interCode->operands[1]),
+                    handleOperand(interCode->operands[2]));
+            break;
+        case IR_DIV:
+            printf("%s := %s / %s\n", handleOperand(interCode->operands[0]), handleOperand(interCode->operands[1]),
+                    handleOperand(interCode->operands[2]));
+            break;
+        case GOTO:
+            printf("GOTO %s\n", handleOperand(interCode->operands[0]));
+            break;
+        case IR_IF:
+            printf("IF %s %s %s ", handleOperand(interCode->operands[0]), handleOperand(interCode->operands[1]),
+                    handleOperand(interCode->operands[2]));
+            break;
+        case IR_RETURN:
+            printf("RETURN %s\n\n", handleOperand(interCode->operands[0]));
+            break;
+        case DEC:
+            printf("DEC %s %s\n", handleOperand(interCode->operands[0]), handleOperand(interCode->operands[1]));
+            break;
+        case ARG:
+            switch (interCode->type) {
+                case GET_ADDR:
+                    printf("ARG &%s\n", handleOperand(interCode->operands[0]));
+                    break;
+                default:
+                    printf("ARG %s\n", handleOperand(interCode->operands[0]));
+                    break;
+            }
+            break;
+        case CALL:
+            if(interCode->operands[0]->kind == OPERAND_FUNC){
+                printf("CALL %s\n", handleOperand(interCode->operands[0]));
+            }
+            else{
+                printf("%s := CALL %s\n", handleOperand(interCode->operands[0]), handleOperand(interCode->operands[1]));
+            }
+            break;
+        case PARAM:
+            printf("PARAM %s\n", handleOperand(interCode->operands[0]));
+            break;
+        case READ:
+            printf("READ %s\n", handleOperand(interCode->operands[0]));
+            break;
+        case WRITE:
+            printf("WRITE %s\n", handleOperand(interCode->operands[0]));
+            break;
+        default:
+            printf( "ERROR in printInterCode\n");
             break;
     }
 }
 
 void printInterCodes() {
+    FILE *file = fopen(filename, "w");
+    assert(file != NULL);
     int size = ArrayListSize(interCodes);
     for (int i = 0; i < size; i++) {
         printInterCode((InterCode *) ArrayListGet(interCodes, i));
     }
+    fclose(file);
 }
 
 Operand *createOperand(enum OPERAND_KIND kind) {
@@ -300,13 +414,16 @@ Operand *getLatestLabel() {
     return (Operand *) ArrayListGet(labels, label_count - 1);
 }
 
-void addInterCode(Operand *operands, enum IR_OPERATION kind, enum ASSIGN_TYPE type) {
+void addInterCode(Operand **operands, enum IR_OPERATION kind, enum ASSIGN_TYPE type) {
+    assert(operands != NULL);
     InterCode *interCode = (InterCode *) malloc(sizeof(InterCode));
-    interCode->operands = operands;
+    for(int i =0; i < 4; i++){
+        interCode->operands[i] = operands[i];
+    }
     interCode->operation = kind;
     interCode->type = type;
     ArrayListInsert(interCodes, ArrayListSize(interCodes), interCode);
-    printInterCode(interCode);
+    printInterCodeToStd(interCode);
 }
 
 
@@ -356,6 +473,17 @@ int countSize(SemanticType type) {
     return size;
 }
 
+static Operand ** createOperandArray(int num, ...){
+    Operand ** result = (Operand**) malloc(4 * 4);
+    memset(result, 0, 16);
+    va_list vaList;
+    va_start(vaList, num);
+    for(int i = 0; i < num; i++){
+        result[i] = va_arg(vaList, Operand*);
+    }
+    va_end(vaList);
+    return result;
+}
 
 // handle program
 static void handleProgram(Node *node) {
@@ -370,6 +498,7 @@ static void handleExtDefList(Node *node) {
 }
 
 static void handleExtDef(Node *node) {
+    handleSpecifier(node->children[0]);
     if (strcmp(node->children[1]->data.specifier, "ExtDecList") == 0) {
         handleExtDecList(node->children[1]);
     } else if (strcmp(node->children[1]->data.specifier, "FunDec") == 0) {
@@ -382,6 +511,12 @@ static void handleExtDecList(Node *node) {
     handleVarDec(node->children[0]);
     if (node->child_count == 3) {
         handleExtDecList(node->children[2]);
+    }
+}
+
+static void handleSpecifier(Node *node){
+    if(strcmp(node->children[0]->data.specifier, "StructSpecifier") == 0){
+        has_ir_error = true;
     }
 }
 
@@ -422,9 +557,8 @@ static void handleVarDec(Node *node) {
             int size = countSize(specifier);
             Operand *array_size = createOperand(OPERAND_SIZE);
             array_size->val.imm_value = size;
-            operand->next = array_size;
             // gen DEC array size
-            addInterCode(operand, DEC, ASSIGN_NONE);
+            addInterCode(createOperandArray(2, operand, array_size), DEC, ASSIGN_NONE);
         }
     }
     else{
@@ -441,7 +575,7 @@ static void handleFunDec(Node *node) {
     strcpy(operand->val.string, name);
     addOPFunc(operand, index);
     //generate function declaration
-    addInterCode(operand, IR_FUNC, ASSIGN_NONE);
+    addInterCode(createOperandArray(1, operand), IR_FUNC, ASSIGN_NONE);
 
     if (node->child_count == 4) {
         handleVarList(node->children[2]);
@@ -451,7 +585,7 @@ static void handleFunDec(Node *node) {
             assert(pos != -1);
             Operand *arg = getOPVar(pos);
             //generate parameter declaration
-            addInterCode(arg, PARAM, ASSIGN_NONE);
+            addInterCode(createOperandArray(1, arg), PARAM, ASSIGN_NONE);
             args = args->next;
         }
     }
@@ -464,11 +598,14 @@ static void handleVarList(Node *node){
     }
 }
 
-static void handleVarDecInParam(Node *node) {
+static void handleVarDecInParam(Node *node, int count) {
     // VarDec -> ID
+    if(count >= 3 ){
+        has_ir_error = true;
+    }
     if (strcmp(node->children[0]->data.specifier, "ID") == 0) {
         SemanticType specifier = node->syn_semantics.semantic_type;
-        char *name = node->children[0]->data.value.string_type;;
+        char *name = node->children[0]->data.value.string_type;
         // not the first time meet the var
         if (containsVar(name) != -1) {
             return;
@@ -483,12 +620,12 @@ static void handleVarDecInParam(Node *node) {
         addOPVar(operand, index);
     }
     else{
-        handleVarDecInParam(node->children[0]);
+        handleVarDecInParam(node->children[0], count + 1);
     }
 }
 
 static void handleParamDec(Node *node){
-    handleVarDecInParam(node->children[1]);
+    handleVarDecInParam(node->children[1], 1);
 }
 
 // handle statements
@@ -510,10 +647,13 @@ static void handleStmt(Node *node) {
     } else if (strcmp(node->children[0]->data.specifier, "CompSt") == 0) {
         handleCompSt(node->children[0]);
     } else if (strcmp(node->children[0]->data.specifier, "RETURN") == 0) {
+        if(node->children[1]->syn_semantics.semantic_type->kind == ARRAY){
+            has_ir_error = true;
+        }
         Operand *place = getTemVar(true);
         handleExp(node->children[1], place);
         //generate return inter code
-        addInterCode(place, IR_RETURN, ASSIGN_NONE);
+        addInterCode(createOperandArray(1, place), IR_RETURN, ASSIGN_NONE);
     } else if (node->child_count == 5) {
         //IF LP Exp RP Stmt
         if (strcmp(node->children[0]->data.specifier, "IF") == 0) {
@@ -521,21 +661,21 @@ static void handleStmt(Node *node) {
             Operand *label2 = getLabel(true);
             handleCond(node->children[2], label1, label2);
             // LABEL label1
-            addInterCode(label1, IR_LABEL, ASSIGN_NONE);
+            addInterCode(createOperandArray(1, label1), IR_LABEL, ASSIGN_NONE);
             handleStmt(node->children[4]);
             // LABEL label2
-            addInterCode(label2, IR_LABEL, ASSIGN_NONE);
+            addInterCode(createOperandArray(1, label2), IR_LABEL, ASSIGN_NONE);
         }
             //WHILE
         else {
             Operand *label1 = getLabel(true);
             Operand *label2 = getLabel(true);
             Operand *label3 = getLabel(true);
-            addInterCode(label1, IR_LABEL, ASSIGN_NONE);
+            addInterCode(createOperandArray(1, label1), IR_LABEL, ASSIGN_NONE);
             handleCond(node->children[2], label2, label3);
-            addInterCode(label2, IR_LABEL, ASSIGN_NONE);
+            addInterCode(createOperandArray(1, label2), IR_LABEL, ASSIGN_NONE);
             handleStmt(node->children[4]);
-            addInterCode(label3, IR_LABEL, ASSIGN_NONE);
+            addInterCode(createOperandArray(1, label3), IR_LABEL, ASSIGN_NONE);
         }
 
     }
@@ -545,11 +685,11 @@ static void handleStmt(Node *node) {
         Operand *label2 = getLabel(true);
         Operand *label3 = getLabel(true);
         handleCond(node->children[2], label1, label2);
-        addInterCode(label1, IR_LABEL, ASSIGN_NONE);
+        addInterCode(createOperandArray(1, label1), IR_LABEL, ASSIGN_NONE);
         handleStmt(node->children[4]);
-        addInterCode(label2, IR_LABEL, ASSIGN_NONE);
+        addInterCode(createOperandArray(1, label2), IR_LABEL, ASSIGN_NONE);
         handleStmt(node->children[6]);
-        addInterCode(label3, IR_LABEL, ASSIGN_NONE);
+        addInterCode(createOperandArray(1, label3), IR_LABEL, ASSIGN_NONE);
     }
 }
 
@@ -584,15 +724,15 @@ static char *getVarDecIDName(Node *node) {
 
 static void addAssignInterCode(Operand* left, Operand* right){
     if(right->is_address && left->is_address){
-        addInterCode(left, IR_ASSIGN, ASSIGN_NONE);
+        addInterCode(createOperandArray(2, left, right), IR_ASSIGN, ASSIGN_NONE);
     } else if(right->is_address){
-        addInterCode(left, IR_ASSIGN, GET_VAL);
+        addInterCode(createOperandArray(2, left, right), IR_ASSIGN, GET_VAL);
     }
     else if(left->is_address){
-        addInterCode(left, IR_ASSIGN, GET_ADDR);
+        addInterCode(createOperandArray(2, left, right), IR_ASSIGN, GET_ADDR);
     }
     else{
-        addInterCode(left, IR_ASSIGN, ASSIGN_NONE);
+        addInterCode(createOperandArray(2, left, right), IR_ASSIGN, ASSIGN_NONE);
     }
 }
 
@@ -606,7 +746,6 @@ static void handleDecInFunction(Node *node) {
         int index = containsVar(name);
         assert(index != -1);
         Operand *var = getOPVar(index);
-        var->next = tem;
         addAssignInterCode(var, tem);
     }
 }
@@ -617,24 +756,21 @@ static void handleDecInFunction(Node *node) {
 // handle expression
 // setting whether the node can be left value
 static void handleExp(Node *node, Operand *place) {
-    if(place == NULL){
-        place = getTemVar(true);
-    }
     if (node->child_count == 1) // ID INT FLOAT
     {
         if (strcmp(node->children[0]->data.specifier, "ID") == 0) {
             int index = containsVar(node->children[0]->data.value.string_type);
             assert(index != -1);
             Operand *var = getOPVar(index);
-            place->next = var;
+            assert(place != NULL);
             addAssignInterCode(place, var);
         } else if (strcmp(node->children[0]->data.specifier, "INT") == 0) {
             Operand *imm = createOperand(OPERAND_IMM);
             imm->val.imm_value = node->children[0]->data.value.int_type;
-            place->next = imm;
-            addInterCode(place, IR_ASSIGN, ASSIGN_NONE);
+            assert(place != NULL);
+            addAssignInterCode(place, imm);
         } else if (strcmp(node->children[0]->data.specifier, "FLOAT") == 0) {
-
+            has_ir_error = true;
         }
     }
     // MINUS
@@ -644,23 +780,21 @@ static void handleExp(Node *node, Operand *place) {
             handleExp(node->children[1], tem);
             Operand *imm = createOperand(OPERAND_IMM);
             imm->val.imm_value = 0;
-            imm->next = tem;
-            place->next = imm;
-            addInterCode(place, IR_SUB, ASSIGN_NONE);
+            if(place != NULL)
+                addInterCode(createOperandArray(3, place, imm, tem), IR_SUB, ASSIGN_NONE);
         } else if(strcmp(node->children[0]->data.specifier, "NOT") == 0){
+            assert(place != NULL);
             Operand *label1 = getLabel(true);
             Operand *label2 = getLabel(true);
             Operand *imm1 = createOperand(OPERAND_IMM);
             imm1->val.imm_value = 0;
-            place->next = imm1;
-            addInterCode(place, IR_ASSIGN, ASSIGN_NONE);
+            addInterCode(createOperandArray(2, place, imm1), IR_ASSIGN, ASSIGN_NONE);
             handleCond(node, label1, label2);
-            addInterCode(label1, IR_LABEL, ASSIGN_NONE);
+            addInterCode(createOperandArray(1, label1), IR_LABEL, ASSIGN_NONE);
             Operand *imm2 = createOperand(OPERAND_IMM);
-            imm2->val.imm_value = 0;
-            place->next = imm2;
-            addInterCode(place, IR_ASSIGN, ASSIGN_NONE);
-            addInterCode(label2, IR_LABEL, ASSIGN_NONE);
+            imm2->val.imm_value = 1;
+            addInterCode(createOperandArray(2, place, imm2), IR_ASSIGN, ASSIGN_NONE);
+            addInterCode(createOperandArray(1, label2), IR_LABEL, ASSIGN_NONE);
         }
     } else if (node->child_count == 3) {
         if (strcmp(node->children[1]->data.specifier, "ASSIGNOP") == 0) {
@@ -671,66 +805,58 @@ static void handleExp(Node *node, Operand *place) {
                 Operand *var = getOPVar(index);
                 Operand *tem = getTemVar(true);
                 handleExp(node->children[2], tem);
-                var->next = tem;
                 addAssignInterCode(var, tem);
-                place->next = var;
-                var->next = NULL;
-                addAssignInterCode(place, var);
             }
             // TODO: how to handle the left val is i[j][k]
             else{
                 Operand *tem1 = getTemVar(true);
+                tem1->is_address = true;
                 handleExp(node->children[0], tem1);
                 Operand *tem2 = getTemVar(true);
                 handleExp(node->children[2], tem2);
-                tem1->next = tem2;
-                addInterCode(tem1, IR_ASSIGN, SET_VAL);
-                tem1->next = NULL;
-                place->next = tem1;
-                addInterCode(place, IR_ASSIGN, GET_VAL);
+                addInterCode(createOperandArray(2, tem1, tem2), IR_ASSIGN, SET_VAL);
             }
 
         } else if (strcmp(node->children[1]->data.specifier, "AND") == 0
                     || strcmp(node->children[1]->data.specifier, "OR") == 0
                     || strcmp(node->children[1]->data.specifier, "RELOP") == 0) {
+            assert(place != NULL);
             Operand *label1 = getLabel(true);
             Operand *label2 = getLabel(true);
             Operand *imm1 = createOperand(OPERAND_IMM);
             imm1->val.imm_value = 0;
-            place->next = imm1;
-            addInterCode(place, IR_ASSIGN, ASSIGN_NONE);
+            addAssignInterCode(place, imm1);
             handleCond(node, label1, label2);
-            addInterCode(label1, IR_LABEL, ASSIGN_NONE);
+            addInterCode(createOperandArray(1, label1), IR_LABEL, ASSIGN_NONE);
             Operand *imm2 = createOperand(OPERAND_IMM);
-            imm2->val.imm_value = 0;
-            place->next = imm2;
-            addInterCode(place, IR_ASSIGN, ASSIGN_NONE);
-            addInterCode(label2, IR_LABEL, ASSIGN_NONE);
+            imm2->val.imm_value = 1;
+            addAssignInterCode(place, imm2);
+            addInterCode(createOperandArray(1, label2), IR_LABEL, ASSIGN_NONE);
         } else if (strcmp(node->children[1]->data.specifier, "LP") == 0) {
             handleExpFuncCall(node, place);
         } else if (strcmp(node->children[1]->data.specifier, "Exp") == 0) {
             handleExp(node->children[1], place);
         } else if (strcmp(node->children[1]->data.specifier, "DOT") == 0) {
             // ? not handle struct
+            has_ir_error = true;
         } else {
             // MATH OPERATOR
+            assert(place != NULL);
             Operand *tem1 = getTemVar(true);
             Operand *tem2 = getTemVar(true);
             handleExp(node->children[0], tem1);
             handleExp(node->children[2], tem2);
-            place->next = tem1;
-            tem1->next = tem2;
             if(strcmp(node->children[1]->data.specifier, "PLUS") == 0){
-                addInterCode(place, IR_ADD, ASSIGN_NONE);
+                addInterCode(createOperandArray(3, place, tem1, tem2), IR_ADD, ASSIGN_NONE);
             }
             else if(strcmp(node->children[1]->data.specifier, "MINUS") == 0){
-                addInterCode(place, IR_SUB, ASSIGN_NONE);
+                addInterCode(createOperandArray(3, place, tem1, tem2), IR_SUB, ASSIGN_NONE);
             }
             else if(strcmp(node->children[1]->data.specifier, "STAR") == 0){
-                addInterCode(place, IR_MUL, ASSIGN_NONE);
+                addInterCode(createOperandArray(3, place, tem1, tem2), IR_MUL, ASSIGN_NONE);
             }
             else if(strcmp(node->children[1]->data.specifier, "DIV") == 0){
-                addInterCode(place, IR_DIV, ASSIGN_NONE);
+                addInterCode(createOperandArray(3, place, tem1, tem2), IR_DIV, ASSIGN_NONE);
             }
         }
     } else {
@@ -738,53 +864,89 @@ static void handleExp(Node *node, Operand *place) {
             return handleExpFuncCall(node, place);
         } else {
             // TODO: handle array Exp -> Exp LB Exp RB
-
+            // only handle i[p][q]..., not handle i.size[j]
+            handleExpArray(node, place);
         }
     }
 }
 
-static void handeExpArray(Node* node, Operand* size){
-    
 
-
+// handle for the array var, and compute the size
+static void handleExpArray(Node* node, Operand * place){
+    assert(place != NULL);
+    // Exp -> ID
+    int size[10];
+    int diamond= 0;
+    while(node->child_count != 1){
+        SemanticType index = node->children[2]->syn_semantics.semantic_type;
+        assert(index->kind == BASIC);
+        size[diamond] = index->val.basic_val->val.int_val;
+        diamond++;
+        node = node->children[0];
+    }
+    int index = containsVar(node->children[0]->data.value.string_type);
+    assert(index != -1);
+    Operand *array = getOPVar(index);
+    SemanticType type = TableGet(node->children[0]->data.value.string_type)->type;
+    Operand *imm = createOperand(OPERAND_IMM);
+    for(int i = 0, j = diamond - 1; i < diamond; i++, j--){
+        type = type->val.array->elem;
+        imm->val.imm_value += countSize(type) * size[j];
+    }
+    Operand *tem = getTemVar(true);
+    if(array->is_address){
+        tem->is_address = true;
+        addInterCode(createOperandArray(3, tem, array, imm), IR_ADD, ASSIGN_NONE);
+    }
+    else{
+        tem->is_address = true;
+        addInterCode(createOperandArray(3, tem, array, imm), IR_ADD, GET_ADDR);
+    }
+    addAssignInterCode(place, tem);
 }
 
 static void handleExpFuncCall(Node *node, Operand* place) {
-    assert(place != NULL);
     SymbolPair function = TableGet(node->children[0]->data.value.string_type);
     // ID LP RP
     if(node->child_count == 3){
         if(strcmp(function->name, "read") == 0){
-            addInterCode(place, READ, ASSIGN_NONE);
+            addInterCode(createOperandArray(1, place), READ, ASSIGN_NONE);
         }
         else{
             Operand * func = getOPFunc(containsFunc(function->name));
-            place->next = func;
-            addInterCode(place, CALL, ASSIGN_NONE);
-
+            if(place != NULL){
+                addInterCode(createOperandArray(2, place, func), CALL, ASSIGN_NONE);
+            }
+            else{
+                addInterCode(createOperandArray(1, func), CALL, ASSIGN_NONE);
+            }
         }
     }
     // ID LP Args RP
     else{
-        Operand* args = createOperand(OPERAND_TEMP);
+        Args* args = (Args*)malloc(sizeof(Args));
         handleArgs(node->children[2], args);
         if(strcmp(function->name, "write") == 0){
-            addInterCode(args->next, WRITE, ASSIGN_NONE);
-            Operand *imm = createOperand(OPERAND_IMM);
-            imm->val.imm_value = 0;
-            assert(place != NULL);
-            place->next = imm;
-            addInterCode(place, IR_ASSIGN, ASSIGN_NONE);
+            addInterCode(createOperandArray(1, args->next), WRITE, ASSIGN_NONE);
+            if(place != NULL){
+                Operand *imm = createOperand(OPERAND_IMM);
+                imm->val.imm_value = 0;
+                addInterCode(createOperandArray(2, place, imm), IR_ASSIGN, ASSIGN_NONE);
+            }
         }
         else{
             Operand * func = getOPFunc(containsFunc(function->name));
-            Operand *arg = args->next;
+            Args *arg = args->next;
             while (arg != NULL){
-                addInterCode(arg, ARG, ASSIGN_NONE);
+                addInterCode(createOperandArray(1, arg->arg), ARG, ASSIGN_NONE);
                 arg = arg->next;
             }
-            place->next = func;
-            addInterCode(place, CALL, ASSIGN_NONE);
+            if(place != NULL){
+                addInterCode(createOperandArray(2, place, func), CALL, ASSIGN_NONE);
+            }
+            else{
+                addInterCode(createOperandArray(1, func), CALL, ASSIGN_NONE);
+            }
         }
     }
 }
@@ -792,14 +954,14 @@ static void handleExpFuncCall(Node *node, Operand* place) {
 
 
 // for change the head of arg list, args.next points to the args, args is the head node
-static void handleArgs(Node *node, Operand* args) {
-
+static void handleArgs(Node *node, Args *args) {
+    Args* result = (Args*) malloc(sizeof(Args));
     Operand *temVar = getTemVar(true);
     handleExp(node->children[0], temVar);
-
-    Operand *tem_args = args->next;
-    temVar->next = tem_args;
-    args->next = temVar;
+    result->arg = temVar;
+    Args *tem_args = args->next;
+    result->next = tem_args;
+    args->next = result;
     if (node->child_count == 3) {
         handleArgs(node->children[2], args);
     }
@@ -815,22 +977,20 @@ static void handleCond(Node *exp, Operand *label_true, Operand *label_false){
         handleExp(exp->children[2], tem2);
         Operand *op = createOperand(OPERAND_OPERATOR);
         strcpy(op->val.string, exp->children[1]->data.value.string_type);
-        op->next = tem2;
-        tem1->next = op;
-        addInterCode(tem1, IR_IF, ASSIGN_NONE);
-        addInterCode(label_true, GOTO, ASSIGN_NONE);
-        addInterCode(label_false, GOTO, ASSIGN_NONE);
+        addInterCode(createOperandArray(3, tem1, op, tem2), IR_IF, ASSIGN_NONE);
+        addInterCode(createOperandArray(1, label_true), GOTO, ASSIGN_NONE);
+        addInterCode(createOperandArray(1, label_false), GOTO, ASSIGN_NONE);
     }
     else if(strcmp(exp->children[1]->data.specifier, "AND") == 0){
         Operand *label1 = getLabel(true);
         handleCond(exp->children[0], label1, label_false);
-        addInterCode(label1, IR_LABEL, ASSIGN_NONE);
+        addInterCode(createOperandArray(1, label1), IR_LABEL, ASSIGN_NONE);
         handleCond(exp->children[2], label_true, label_false);
     }
     else if(strcmp(exp->children[1]->data.specifier, "OR") == 0){
         Operand *label1 = getLabel(true);
         handleCond(exp->children[0], label_true, label1);
-        addInterCode(label1, IR_LABEL, ASSIGN_NONE);
+        addInterCode(createOperandArray(1, label1), IR_LABEL, ASSIGN_NONE);
         handleCond(exp->children[2], label_true, label_false);
     }
     else if(strcmp(exp->children[0]->data.specifier, "NOT") == 0){
@@ -843,11 +1003,9 @@ static void handleCond(Node *exp, Operand *label_true, Operand *label_false){
         imm->val.imm_value = 0;
         Operand *op = createOperand(OPERAND_OPERATOR);
         strcpy(op->val.string, "!=");
-        op->next = imm;
-        tem1->next = op;
-        addInterCode(tem1, IR_IF, ASSIGN_NONE);
-        addInterCode(label_true, GOTO, ASSIGN_NONE);
-        addInterCode(label_false, GOTO, ASSIGN_NONE);
+        addInterCode(createOperandArray(3, tem1, op, imm), IR_IF, ASSIGN_NONE);
+        addInterCode(createOperandArray(1, label_true), GOTO, ASSIGN_NONE);
+        addInterCode(createOperandArray(1, label_false), GOTO, ASSIGN_NONE);
     }
 }
 

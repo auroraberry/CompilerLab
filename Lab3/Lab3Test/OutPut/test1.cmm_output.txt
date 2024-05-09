@@ -1,30 +1,26 @@
 FUNCTION main :
-READ tem1
-var0 := tem1
-tem0 := var0
-tem2 := var0
-tem3 := #0
-IF tem2 > tem3 GOTO label0
+READ tem0
+var0 := tem0
+tem1 := var0
+tem2 := #0
+IF tem1 > tem2 GOTO label0
 GOTO label1
 LABEL label0 :
-tem5 := #1
-WRITE tem5
-tem4 := #0
+tem3 := #1
+WRITE 
 LABEL label1 :
-tem6 := var0
-tem7 := #0
-IF tem6 < tem7 GOTO label3
+tem4 := var0
+tem5 := #0
+IF tem4 < tem5 GOTO label3
 GOTO label4
 LABEL label3 :
-tem10 := #1
-tem9 := #0 - tem10
-WRITE tem9
-tem8 := #0
+tem7 := #1
+tem6 := #0 - tem7
+WRITE 
 LABEL label4 :
-tem12 := #0
-WRITE tem12
-tem11 := #0
+tem8 := #0
+WRITE 
 LABEL label5 :
 LABEL label2 :
-tem13 := #0
-RETURN tem13
+tem9 := #0
+RETURN tem9

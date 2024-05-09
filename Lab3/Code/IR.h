@@ -6,6 +6,7 @@
 
 typedef struct Operand Operand;
 typedef struct InterCode InterCode;
+typedef struct Args Args;
 
 // record the index of var/func
 extern ArrayList *ir_variables;
@@ -39,7 +40,7 @@ enum OPERAND_KIND {
 struct InterCode {
     enum IR_OPERATION operation;
     enum ASSIGN_TYPE type;
-    Operand *operands;
+    Operand *operands[4];
 };
 
 
@@ -53,7 +54,11 @@ struct Operand {
         int label_no;
         int imm_value;
     } val;
-    Operand *next;
+};
+
+struct Args {
+    Operand* arg;
+    Args* next;
 };
 
 void initIR();
@@ -76,13 +81,13 @@ Operand *getLatestLabel();
 Operand* getTemVar(bool is_new);
 Operand* getLabel(bool is_new);
 
-void addInterCode(Operand *operands, enum IR_OPERATION kind, enum ASSIGN_TYPE type);
+void addInterCode(Operand **operands, enum IR_OPERATION kind, enum ASSIGN_TYPE type);
 
 void printInterCodes();
 
 Operand *createOperand(enum OPERAND_KIND kind);
 
-void generateIR(Node* root);
+void generateIR(Node* root, char* name);
 
 int countSize(SemanticType type);
 
