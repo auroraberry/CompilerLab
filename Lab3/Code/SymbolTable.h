@@ -8,8 +8,6 @@ enum Kind {BASIC, ARRAY, STRUCTURE, FUNC, ERROR, NONE};
 
 enum BASIC_TYPE {BASIC_INT, BASIC_FLOAT};
 
-enum STATUS {NOEXISTS, EXISTS};
-
 typedef struct Type_* SemanticType;
 typedef struct BasicVal_* BasicVal;
 typedef struct Array_* Array;

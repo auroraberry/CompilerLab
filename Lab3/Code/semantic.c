@@ -91,7 +91,7 @@ static SemanticType handleExpINT(Node *node); // node is INT
 static SemanticType handleExpFLOAT(Node *node); // node is FLOAT
 static ArgList handleArgs(Node *node);
 
-bool handle[1000];
+static bool handle[1000];
 
 void semanticAnalysis(Node *root) {
     handleProgram(root);

@@ -1,0 +1,124 @@
+FUNCTION main :
+DEC var0 24
+DEC var1 24
+tem0 := #0
+var2 := tem0
+LABEL label0 :
+tem1 := var2
+tem2 := #6
+IF tem1 < tem2 GOTO label1
+GOTO label2
+LABEL label1 :
+tem4 := var2
+tem5 := #0
+tem6 := #0
+tem7 := tem5 * #8
+tem6 := tem6 + tem7
+tem7 := tem4 * #4
+tem6 := tem6 + tem7
+tem8 := &var1 + tem6
+tem3 := tem8
+tem9 := var2
+*tem3 := tem9
+tem11 := var2
+tem12 := #1
+tem10 := tem11 + tem12
+var2 := tem10
+GOTO label0
+LABEL label2 :
+tem13 := var1
+var0 := tem13
+tem15 := #0
+tem16 := #0
+tem17 := #0
+tem18 := tem16 * #12
+tem17 := tem17 + tem18
+tem18 := tem15 * #4
+tem17 := tem17 + tem18
+tem19 := &var0 + tem17
+tem14 := *tem19
+WRITE tem14
+tem21 := #1
+tem22 := #0
+tem23 := #0
+tem24 := tem22 * #12
+tem23 := tem23 + tem24
+tem24 := tem21 * #4
+tem23 := tem23 + tem24
+tem25 := &var0 + tem23
+tem20 := *tem25
+WRITE tem20
+tem27 := #2
+tem28 := #0
+tem29 := #0
+tem30 := tem28 * #12
+tem29 := tem29 + tem30
+tem30 := tem27 * #4
+tem29 := tem29 + tem30
+tem31 := &var0 + tem29
+tem26 := *tem31
+WRITE tem26
+tem33 := #0
+tem34 := #1
+tem35 := #0
+tem36 := tem34 * #12
+tem35 := tem35 + tem36
+tem36 := tem33 * #4
+tem35 := tem35 + tem36
+tem37 := &var0 + tem35
+tem32 := *tem37
+WRITE tem32
+tem39 := #1
+tem40 := #1
+tem41 := #0
+tem42 := tem40 * #12
+tem41 := tem41 + tem42
+tem42 := tem39 * #4
+tem41 := tem41 + tem42
+tem43 := &var0 + tem41
+tem38 := *tem43
+WRITE tem38
+tem45 := #2
+tem46 := #1
+tem47 := #0
+tem48 := tem46 * #12
+tem47 := tem47 + tem48
+tem48 := tem45 * #4
+tem47 := tem47 + tem48
+tem49 := &var0 + tem47
+tem44 := *tem49
+WRITE tem44
+tem51 := #1
+tem52 := #0
+tem53 := #0
+tem54 := tem52 * #12
+tem53 := tem53 + tem54
+tem54 := tem51 * #4
+tem53 := tem53 + tem54
+tem55 := &var0 + tem53
+tem50 := tem55
+tem57 := #1
+tem56 := #0 - tem57
+*tem50 := tem56
+tem61 := #1
+tem62 := #0
+tem63 := #0
+tem64 := tem62 * #12
+tem63 := tem63 + tem64
+tem64 := tem61 * #4
+tem63 := tem63 + tem64
+tem65 := &var0 + tem63
+tem59 := *tem65
+tem66 := #1
+tem67 := #0
+tem68 := #0
+tem69 := tem67 * #8
+tem68 := tem68 + tem69
+tem69 := tem66 * #4
+tem68 := tem68 + tem69
+tem70 := &var1 + tem68
+tem60 := *tem70
+tem58 := tem59 + tem60
+WRITE tem58
+tem71 := #0
+RETURN tem71

@@ -1,0 +1,150 @@
+FUNCTION func2 :
+PARAM var0
+tem1 := #0
+tem2 := #0
+tem3 := tem1 * #4
+tem2 := tem2 + tem3
+tem4 := var0 + tem2
+tem0 := tem4
+tem5 := #5
+*tem0 := tem5
+tem7 := #1
+tem8 := #0
+tem9 := tem7 * #4
+tem8 := tem8 + tem9
+tem10 := var0 + tem8
+tem6 := tem10
+tem11 := #4
+*tem6 := tem11
+tem13 := #2
+tem14 := #0
+tem15 := tem13 * #4
+tem14 := tem14 + tem15
+tem16 := var0 + tem14
+tem12 := tem16
+tem17 := #3
+*tem12 := tem17
+tem19 := #3
+tem20 := #0
+tem21 := tem19 * #4
+tem20 := tem20 + tem21
+tem22 := var0 + tem20
+tem18 := tem22
+tem23 := #1
+*tem18 := tem23
+tem25 := #4
+tem26 := #0
+tem27 := tem25 * #4
+tem26 := tem26 + tem27
+tem28 := var0 + tem26
+tem24 := tem28
+tem29 := #2
+*tem24 := tem29
+tem30 := #0
+RETURN tem30
+
+FUNCTION func3 :
+PARAM var0
+
+tem31 := #0 
+var1 := tem31 // i = 0
+
+tem32 := #4
+var2 := tem32 // j = 4
+
+LABEL label0 :
+tem33 := var2
+tem34 := #0
+IF tem33 > tem34 GOTO label1 // while j > 0
+GOTO label2
+
+LABEL label1 :
+LABEL label3 :
+tem35 := var1
+tem36 := var2
+IF tem35 < tem36 GOTO label4 // i < j
+GOTO label5
+
+LABEL label4 :
+tem39 := var1
+tem40 := #0
+tem41 := tem39 * #4
+tem40 := tem40 + tem41 
+tem42 := var0 + tem40
+tem37 := *tem42 // x[i]
+
+tem44 := var1
+tem45 := #1
+tem43 := tem44 + tem45 // i + 1
+tem46 := #0
+tem47 := tem43 * #4
+tem46 := tem46 + tem47
+tem48 := var0 + tem46
+tem38 := *tem48 // x[i+1]
+IF tem37 > tem38 GOTO label6 // x[i] > x[i+1]
+GOTO label7
+
+LABEL label6 :
+tem51 := var1
+tem52 := #1
+tem50 := tem51 + tem52 // i + 1
+tem53 := #0
+tem54 := tem50 * #4
+tem53 := tem53 + tem54 
+tem55 := var0 + tem53
+tem49 := *tem55
+var3 := tem49 //  tem = x[i+1]
+
+tem58 := var1
+tem59 := #1
+tem57 := tem58 + tem59
+tem60 := #0
+tem61 := tem57 * #4
+tem60 := tem60 + tem61 
+tem62 := var0 + tem60 
+tem56 := tem62 // x[i+1]
+tem64 := var1
+tem65 := #0
+tem66 := tem64 * #4
+tem65 := tem65 + tem66
+tem67 := var0 + tem65
+tem63 := *tem67
+*tem56 := tem63 // x[i+1] = x[i]
+
+tem69 := var1
+tem70 := #0
+tem71 := tem69 * #4
+tem70 := tem70 + tem71
+tem72 := var0 + tem70
+tem68 := tem72 // x[i]
+tem73 := var3 
+*tem68 := tem73 // x[i] = tem
+
+LABEL label7 :
+tem75 := var1
+tem76 := #1
+tem74 := tem75 + tem76
+var1 := tem74 // i = i+1
+GOTO label3
+
+LABEL label5 : // i == j
+tem77 := #0
+var1 := tem77 // i =0
+tem79 := var2
+tem80 := #1
+tem78 := tem79 - tem80
+var2 := tem78
+GOTO label0
+LABEL label2 :
+tem81 := #0
+RETURN tem81
+FUNCTION main :
+DEC var4 20
+tem82 := var4
+ARG tem82
+tem83 := CALL func2
+tem84 := var4
+ARG tem84
+tem85 := CALL func3
+tem86 := #0
+RETURN tem86

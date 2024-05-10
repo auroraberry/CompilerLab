@@ -7,7 +7,7 @@
 #include "ArrayList.h"
 
 SymbolTable symbol_table = NULL;
-bool handle[1000];
+static bool handle[1000];
 
 bool isSameType(SemanticType type1, SemanticType type2){
     if(type1 == NULL && type2 == NULL){

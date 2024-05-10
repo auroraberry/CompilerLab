@@ -1,0 +1,43 @@
+FUNCTION func2 :
+PARAM var0
+tem0 := var0
+tem1 := #1
+IF tem0 == tem1 GOTO label0
+GOTO label1
+LABEL label0 :
+tem2 := var0
+RETURN tem2
+GOTO label2
+LABEL label1 :
+tem4 := var0
+tem7 := var0
+tem8 := #1
+tem6 := tem7 - tem8
+ARG tem6
+tem9 := CALL func2
+tem5 := tem9
+tem3 := tem4 * tem5
+RETURN tem3
+LABEL label2 :
+FUNCTION main :
+READ tem10
+var1 := tem10
+tem11 := var1
+tem12 := #1
+IF tem11 > tem12 GOTO label3
+GOTO label4
+LABEL label3 :
+tem14 := var1
+ARG tem14
+tem15 := CALL func2
+tem13 := tem15
+var2 := tem13
+GOTO label5
+LABEL label4 :
+tem16 := #1
+var2 := tem16
+LABEL label5 :
+tem17 := var2
+WRITE tem17
+tem18 := #0
+RETURN tem18

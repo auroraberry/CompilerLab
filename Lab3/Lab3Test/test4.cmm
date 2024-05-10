@@ -1,21 +1,31 @@
-struct Operands
-{
-int o1;
-int o2;
-};
-
-int add(struct Operands temp)
-{
-return (temp.o1 + temp.o2);
+int init(int y[5]){
+    y[0] = 5;
+    y[1] = 4;
+    y[2] = 3;
+    y[3] = 1;
+    y[4] = 2;
+    return 0;
 }
-
-int main()
-{
-int n;
-struct Operands op;
-op.o1 = 1;
-op.o2 = 2;
-n = add(op);
-write(n);
-return 0;
+int sort(int x[5]){
+    int i = 0, j = 4;
+    while(j > 0){
+        while(i < j){
+            if(x[i] > x[i+1]){
+                int tem = x[i+1];
+                x[i+1] = x[i];
+                x[i] = tem;
+            } 
+            i = i + 1;
+        }
+        i = 0;
+        j = j - 1;
+    }
+    
+    return 0;
+}
+int main(){
+    int array[5];
+    init(array);
+    sort(array);
+    return 0;
 }

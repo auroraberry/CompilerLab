@@ -14,7 +14,7 @@ for filename in os.listdir(test_files_folder):
         parser_command = ['./parser', os.path.join(test_files_folder, filename), output_name]
 
         # 构建输出文件路径
-        output_file = os.path.join(output_folder, f'{filename}_output.txt')
+        output_file = os.path.join(output_folder, f'{filename}_output.ir')
         subprocess.run(parser_command)
 
         # 读取output.ir文件内容
