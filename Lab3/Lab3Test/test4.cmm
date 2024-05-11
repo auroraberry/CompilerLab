@@ -1,19 +1,22 @@
-int init(int y[5]){
-    y[0] = 5;
-    y[1] = 4;
-    y[2] = 3;
-    y[3] = 1;
-    y[4] = 2;
+struct array{
+    int x[5];
+};
+int init(struct array array1){
+    array1.x[0] = 5;
+    array1.x[1] = 4;
+    array1.x[2] = 3;
+    array1.x[3] = 1;
+    array1.x[4] = 2;
     return 0;
 }
-int sort(int x[5]){
+int sort(struct array array2){
     int i = 0, j = 4;
     while(j > 0){
         while(i < j){
-            if(x[i] > x[i+1]){
-                int tem = x[i+1];
-                x[i+1] = x[i];
-                x[i] = tem;
+            if(array2.x[i] > array2.x[i+1]){
+                int tem = array2.x[i+1];
+                array2.x[i+1] = array2.x[i];
+                array2.x[i] = tem;
             } 
             i = i + 1;
         }
@@ -24,8 +27,8 @@ int sort(int x[5]){
     return 0;
 }
 int main(){
-    int array[5];
-    init(array);
-    sort(array);
+    struct array a;
+    init(a);
+    sort(a);
     return 0;
 }

@@ -10,7 +10,8 @@
 #include "stdarg.h"
 
 bool has_ir_error = false;
-static void printfErrorInfo(char* info){
+
+static void printfErrorInfo(char *info) {
     //printf("%s", info);
     exit(0);
 }
@@ -24,9 +25,7 @@ static void handleExtDecList(Node *node);
 
 static void handleSpecifier(Node *node);
 
-static void handleVarDec(Node *node);
-
-static void handleVarDecInStruct(Node *node, FieldList fields);
+static void handleVarDec(Node *node, int count);
 
 static void handleFunDec(Node *node);
 
@@ -52,6 +51,8 @@ static void handleExp(Node *node, Operand *place);
 
 static void handleExpFuncCall(Node *node, Operand *place); // node is father exp
 static void handleExpArray(Node *node, Operand *place);
+
+static void handleExpStruct(Node *node, Operand *place);
 
 static void handleArgs(Node *node, Args *args, ArgList params);
 
@@ -256,7 +257,7 @@ void printInterCode(InterCode *interCode) {
             break;
         case CALL:
             fprintf(file, "%s := CALL %s\n", handleOperand(interCode->operands[0]),
-                        handleOperand(interCode->operands[1]));
+                    handleOperand(interCode->operands[1]));
             break;
         case PARAM:
             fprintf(file, "PARAM %s\n", handleOperand(interCode->operands[0]));
@@ -533,17 +534,17 @@ static void handleExtDef(Node *node) {
 }
 
 static void handleExtDecList(Node *node) {
-    handleVarDec(node->children[0]);
+    handleVarDec(node->children[0], 1);
     if (node->child_count == 3) {
         handleExtDecList(node->children[2]);
     }
 }
 
 static void handleSpecifier(Node *node) {
-    if (strcmp(node->children[0]->data.specifier, "StructSpecifier") == 0) {
+    /*if (strcmp(node->children[0]->data.specifier, "StructSpecifier") == 0) {
         has_ir_error = true;
         printfErrorInfo("Cannot translate: Code contains variables of struct type.");
-    }
+    }*/
 }
 
 
@@ -564,7 +565,10 @@ static char *handleTag(Node *node) {
 
 // handle declaration
 // return pair.name is NULL, if it meets error
-static void handleVarDec(Node *node) {
+static void handleVarDec(Node *node, int count) {
+    if (count > 2) {
+        printfErrorInfo("Cannot translate: Code contains variables of multi-dimensional array type.");
+    }
     // VarDec -> ID
     if (strcmp(node->children[0]->data.specifier, "ID") == 0) {
         SemanticType specifier = node->syn_semantics.semantic_type;
@@ -578,16 +582,16 @@ static void handleVarDec(Node *node) {
         strcpy(operand->val.string, name);
         addOPVar(operand, index);
         // array definition
-        if (specifier->kind == ARRAY) {
-            // DEC size for array
+        if (specifier->kind == ARRAY || specifier->kind == STRUCTURE) {
+            // DEC size for array or struct
             int size = countSize(specifier);
             Operand *array_size = createOperand(OPERAND_SIZE);
             array_size->val.imm_value = size;
-            // gen DEC array size
+            // gen DEC array/struct size
             addInterCode(createOperandArray(2, operand, array_size), DEC, ASSIGN_NONE);
         }
     } else {
-        handleVarDec(node->children[0]);
+        handleVarDec(node->children[0], count + 1);
     }
 }
 
@@ -623,15 +627,17 @@ static void handleVarList(Node *node) {
     }
 }
 
+
+// TODO(): handle struct type param
 static void handleVarDecInParam(Node *node, int count) {
     // VarDec -> ID
-    if (count >= 3) {
+    if (count >= 2) {
         has_ir_error = true;
-        printfErrorInfo("Cannot translate: Code contains variables of multi-dimensional array type.");
+        printfErrorInfo("Cannot translate: Code contains variables of array type.");
     }
     if (strcmp(node->children[0]->data.specifier, "ID") == 0) {
-        SemanticType specifier = node->syn_semantics.semantic_type;
         char *name = node->children[0]->data.value.string_type;
+        SemanticType specifier = TableGet(name)->type;
         // not the first time meet the var
         if (containsVar(name) != -1) {
             return;
@@ -639,7 +645,7 @@ static void handleVarDecInParam(Node *node, int count) {
         int index = addVar(name);
         Operand *operand = createOperand(OPERAND_VARIABLE);
         // array definition
-        if (specifier->kind == ARRAY) {
+        if (specifier->kind == STRUCTURE) {
             operand->is_address = true;
         }
         strcpy(operand->val.string, name);
@@ -672,9 +678,10 @@ static void handleStmt(Node *node) {
     } else if (strcmp(node->children[0]->data.specifier, "CompSt") == 0) {
         handleCompSt(node->children[0]);
     } else if (strcmp(node->children[0]->data.specifier, "RETURN") == 0) {
-        if (node->children[1]->syn_semantics.semantic_type->kind == ARRAY) {
+        if (node->children[1]->syn_semantics.semantic_type->kind == ARRAY ||
+            node->children[1]->syn_semantics.semantic_type->kind == STRUCTURE) {
             has_ir_error = true;
-            printfErrorInfo("Cannot translate: Code contains return variables of array type.");
+            printfErrorInfo("Cannot translate: Code contains return variables of array or struct type.");
         }
         Operand *place = getTemVar(true);
         handleExp(node->children[1], place);
@@ -763,7 +770,7 @@ static void addAssignInterCode(Operand *left, Operand *right) {
 }
 
 static void handleDecInFunction(Node *node) {
-    handleVarDec(node->children[0]);
+    handleVarDec(node->children[0], 1);
     if (node->child_count != 1) {
         // int i = 1
         Operand *tem = getTemVar(true);
@@ -783,16 +790,20 @@ static void handleExp(Node *node, Operand *place) {
     if (node->child_count == 1) // ID INT FLOAT
     {
         if (strcmp(node->children[0]->data.specifier, "ID") == 0) {
+            if (place == NULL) {
+                return;
+            }
             int index = containsVar(node->children[0]->data.value.string_type);
             assert(index != -1);
             Operand *var = getOPVar(index);
-            if(place != NULL)
-                addAssignInterCode(place, var);
+            addAssignInterCode(place, var);
         } else if (strcmp(node->children[0]->data.specifier, "INT") == 0) {
+            if (place == NULL) {
+                return;
+            }
             Operand *imm = createOperand(OPERAND_IMM);
             imm->val.imm_value = node->children[0]->data.value.int_type;
-            if(place != NULL)
-                addAssignInterCode(place, imm);
+            addAssignInterCode(place, imm);
         } else if (strcmp(node->children[0]->data.specifier, "FLOAT") == 0) {
             has_ir_error = true;
             printfErrorInfo("Cannot translate: Code contains variables of float type.");
@@ -808,7 +819,9 @@ static void handleExp(Node *node, Operand *place) {
             if (place != NULL)
                 addInterCode(createOperandArray(3, place, imm, tem), IR_SUB, ASSIGN_NONE);
         } else if (strcmp(node->children[0]->data.specifier, "NOT") == 0) {
-            assert(place != NULL);
+            if (place == NULL) {
+                return;
+            }
             Operand *label1 = getLabel(true);
             Operand *label2 = getLabel(true);
             Operand *imm1 = createOperand(OPERAND_IMM);
@@ -830,16 +843,16 @@ static void handleExp(Node *node, Operand *place) {
                 Operand *var = getOPVar(index);
                 Operand *tem = getTemVar(true);
                 handleExp(node->children[2], tem);
-                if(var->is_address && tem->is_address){
+                if (var->is_address && tem->is_address) {
                     addInterCode(createOperandArray(2, var, tem), IR_ASSIGN, BOTH_POINTER);
-                }else{
+                } else {
                     addAssignInterCode(var, tem);
                 }
-                if(place != NULL){
+                if (place != NULL) {
                     addAssignInterCode(place, tem);
                 }
             }
-                // TODO: how to handle the left val is i[j][k]
+                // TODO: how to handle the left val is i.j[k]
             else {
                 Operand *tem1 = getTemVar(true);
                 tem1->is_address = true;
@@ -847,7 +860,7 @@ static void handleExp(Node *node, Operand *place) {
                 Operand *tem2 = getTemVar(true);
                 handleExp(node->children[2], tem2);
                 addInterCode(createOperandArray(2, tem1, tem2), IR_ASSIGN, SET_VAL);
-                if(place != NULL){
+                if (place != NULL) {
                     addAssignInterCode(place, tem2);
                 }
             }
@@ -859,13 +872,13 @@ static void handleExp(Node *node, Operand *place) {
             Operand *label2 = getLabel(true);
             Operand *imm1 = createOperand(OPERAND_IMM);
             imm1->val.imm_value = 0;
-            if(place != NULL)
+            if (place != NULL)
                 addAssignInterCode(place, imm1);
             handleCond(node, label1, label2);
             addInterCode(createOperandArray(1, label1), IR_LABEL, ASSIGN_NONE);
             Operand *imm2 = createOperand(OPERAND_IMM);
             imm2->val.imm_value = 1;
-            if(place != NULL)
+            if (place != NULL)
                 addAssignInterCode(place, imm2);
             addInterCode(createOperandArray(1, label2), IR_LABEL, ASSIGN_NONE);
         } else if (strcmp(node->children[1]->data.specifier, "LP") == 0) {
@@ -873,16 +886,15 @@ static void handleExp(Node *node, Operand *place) {
         } else if (strcmp(node->children[1]->data.specifier, "Exp") == 0) {
             handleExp(node->children[1], place);
         } else if (strcmp(node->children[1]->data.specifier, "DOT") == 0) {
-            // ? not handle struct
-            has_ir_error = true;
-            printfErrorInfo("Cannot translate: Code contains variables of struct type.");
+            // TODO(): handle exp.id
+            handleExpStruct(node, place);
         } else {
             // MATH OPERATOR
             Operand *tem1 = getTemVar(true);
             Operand *tem2 = getTemVar(true);
             handleExp(node->children[0], tem1);
             handleExp(node->children[2], tem2);
-            if(place != NULL){
+            if (place != NULL) {
                 if (strcmp(node->children[1]->data.specifier, "PLUS") == 0) {
                     addInterCode(createOperandArray(3, place, tem1, tem2), IR_ADD, ASSIGN_NONE);
                 } else if (strcmp(node->children[1]->data.specifier, "MINUS") == 0) {
@@ -898,16 +910,102 @@ static void handleExp(Node *node, Operand *place) {
         if (strcmp(node->children[0]->data.specifier, "ID") == 0) {
             return handleExpFuncCall(node, place);
         } else {
-            // TODO: handle array Exp -> Exp LB Exp RB
-            // only handle i[p][q]..., not handle i.size[j]
+            // only handle i[p][q]...
             handleExpArray(node, place);
         }
     }
 }
 
+static SemanticType getTypeForIR(Node* node, enum Kind kind){
+    SemanticType type;
+    if(kind == ARRAY){
+        // a[i]
+        char *array_name;
+        if (node->children[0]->child_count == 1) {
+            array_name = node->children[0]->children[0]->data.value.string_type;
 
+        }
+            // o.a[i] a[i].b[i]
+        else {
+            array_name = node->children[0]->children[2]->data.value.string_type;
+        }
+        type = TableGet(array_name)->type;
+    }
+    else{
+        // o.id
+        if(node->children[0]->child_count == 1){
+            type = TableGet(node->children[0]->children[0]->data.value.string_type)->type;
+        }
+            // a[i].id
+        else if(node->children[0]->child_count == 4){
+            type = getTypeForIR(node->children[0], ARRAY)->val.array->elem;
+        }
+        // a.b.id
+        else{
+            type = TableGet(node->children[0]->children[2]->data.value.string_type)->type;
+        }
+    }
+    return type;
+}
+
+static void handleExpStruct(Node *node, Operand *place) {
+    char *id = node->children[2]->data.value.string_type;
+    Operand *structure = getTemVar(true);
+    structure->is_address = true;
+    handleExp(node->children[0], structure);
+    SemanticType type = getTypeForIR(node, STRUCTURE);
+    FieldList fields = type->val.structure->type->val.structure;
+    int offset = 0;
+    while(fields != NULL){
+        if(strcmp(fields->name, id) == 0){
+            break;
+        }
+        offset += countSize(fields->type);
+        fields = fields->next;
+    }
+    Operand *size = createOperand(OPERAND_IMM);
+    size->val.imm_value = offset;
+    Operand *tem = getTemVar(true);
+    if (structure->is_address) {
+        tem->is_address = true;
+        addInterCode(createOperandArray(3, tem, structure, size), IR_ADD, ASSIGN_NONE);
+    } else {
+        tem->is_address = true;
+        addInterCode(createOperandArray(3, tem, structure, size), IR_ADD, GET_ADDR);
+    }
+    if (place != NULL) {
+        addAssignInterCode(place, tem);
+    }
+}
+
+// TODO: handle array Exp -> Exp LB Exp RB, handle i.size[j]
 // handle for the array var, and compute the size
 static void handleExpArray(Node *node, Operand *place) {
+    Operand *index = getTemVar(true);
+    handleExp(node->children[2], index);
+    Operand *array = getTemVar(true);
+    array->is_address = true;
+    handleExp(node->children[0], array);
+    SemanticType type = getTypeForIR(node, ARRAY);
+    Operand *imm = createOperand(OPERAND_IMM);
+    imm->val.imm_value = countSize(type->val.array->elem);
+    Operand *size = getTemVar(true);
+    addInterCode(createOperandArray(3, size, index, imm), IR_MUL, ASSIGN_NONE);
+    Operand *tem = getTemVar(true);
+    if (array->is_address) {
+        tem->is_address = true;
+        addInterCode(createOperandArray(3, tem, array, size), IR_ADD, ASSIGN_NONE);
+    } else {
+        tem->is_address = true;
+        addInterCode(createOperandArray(3, tem, array, size), IR_ADD, GET_ADDR);
+    }
+    if (place != NULL) {
+        addAssignInterCode(place, tem);
+    }
+}
+
+// multi-dimensional array
+/*static void handleExpArray(Node *node, Operand *place) {
     // Exp -> ID
     Operand *size[10];
     int diamond = 0;
@@ -945,8 +1043,9 @@ static void handleExpArray(Node *node, Operand *place) {
     if(place != NULL){
         addAssignInterCode(place, tem);
     }
-}
+} */
 
+// TODO() handle struct var being arg
 static void handleExpFuncCall(Node *node, Operand *place) {
     SymbolPair function = TableGet(node->children[0]->data.value.string_type);
     // ID LP RP
@@ -966,6 +1065,7 @@ static void handleExpFuncCall(Node *node, Operand *place) {
     else {
         Args *args = (Args *) malloc(sizeof(Args));
         memset(args, 0, sizeof(Args));
+        assert(args != NULL);
         handleArgs(node->children[2], args, function->type->val.function->next);
         if (strcmp(function->name, "write") == 0) {
             addInterCode(createOperandArray(1, args->next->arg), WRITE, ASSIGN_NONE);
@@ -978,7 +1078,7 @@ static void handleExpFuncCall(Node *node, Operand *place) {
             Operand *func = getOPFunc(containsFunc(function->name));
             ArgList params = function->type->val.function->next;
             int param_count = 0;
-            while(params != NULL){
+            while (params != NULL) {
                 params = params->next;
                 param_count++;
             }
@@ -988,15 +1088,14 @@ static void handleExpFuncCall(Node *node, Operand *place) {
             int need_step;
             while (arg != NULL) {
                 need_step = param_count - index;
-                for(int i = 0; i < need_step; i++){
+                for (int i = 0; i < need_step; i++) {
                     params = params->next;
                 }
-                if(params->type->kind == ARRAY
-                        && !arg->arg->is_address
-                        ){
+                if (params->type->kind == STRUCTURE
+                    && !arg->arg->is_address
+                        ) {
                     addInterCode(createOperandArray(1, arg->arg), ARG, GET_ADDR);
-                }
-                else{
+                } else {
                     addInterCode(createOperandArray(1, arg->arg), ARG, ASSIGN_NONE);
                 }
                 arg = arg->next;
@@ -1012,12 +1111,12 @@ static void handleExpFuncCall(Node *node, Operand *place) {
     }
 }
 
-
+// TODO() handle struct var being arg
 // for change the head of arg list, args.next points to the args, args is the head node
 static void handleArgs(Node *node, Args *args, ArgList params) {
     Args *result = (Args *) malloc(sizeof(Args));
     Operand *temVar = getTemVar(true);
-    if(params->type->kind == ARRAY){
+    if (params->type->kind == STRUCTURE) {
         temVar->is_address = true;
     }
     handleExp(node->children[0], temVar);
@@ -1033,7 +1132,7 @@ static void handleArgs(Node *node, Args *args, ArgList params) {
 
 // Exp -> condition production
 static void handleCond(Node *exp, Operand *label_true, Operand *label_false) {
-    if(exp->child_count == 1){
+    if (exp->child_count == 1) {
         Operand *tem1 = getTemVar(true);
         handleExp(exp, tem1);
         Operand *imm1 = createOperand(OPERAND_IMM);
@@ -1043,8 +1142,7 @@ static void handleCond(Node *exp, Operand *label_true, Operand *label_false) {
         addInterCode(createOperandArray(3, tem1, op, imm1), IR_IF, ASSIGN_NONE);
         addInterCode(createOperandArray(1, label_true), GOTO, ASSIGN_NONE);
         addInterCode(createOperandArray(1, label_false), GOTO, ASSIGN_NONE);
-    }
-    else if (strcmp(exp->children[1]->data.specifier, "RELOP") == 0) {
+    } else if (strcmp(exp->children[1]->data.specifier, "RELOP") == 0) {
         Operand *tem1 = getTemVar(true);
         Operand *tem2 = getTemVar(true);
         handleExp(exp->children[0], tem1);
