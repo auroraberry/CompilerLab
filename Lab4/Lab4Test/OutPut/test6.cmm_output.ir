@@ -1,0 +1,31 @@
+FUNCTION func2 :
+PARAM var0
+tem3 := var0
+tem4 := tem3 + #0
+tem1 := *tem4
+tem5 := var0
+tem6 := tem5 + #4
+tem2 := *tem6
+tem0 := tem1 + tem2
+RETURN tem0
+FUNCTION main :
+DEC var2 8
+tem8 := &var2
+tem9 := tem8 + #0
+tem7 := tem9
+tem10 := #1
+*tem7 := tem10
+tem12 := &var2
+tem13 := tem12 + #4
+tem11 := tem13
+tem14 := #2
+*tem11 := tem14
+tem16 := &var2
+ARG tem16
+tem17 := CALL func2
+tem15 := tem17
+var1 := tem15
+tem18 := var1
+WRITE tem18
+tem19 := #0
+RETURN tem19

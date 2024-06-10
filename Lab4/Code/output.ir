@@ -1,0 +1,22 @@
+FUNCTION main :
+tem0 := #1
+var0 := tem0
+READ tem1
+var0 := tem1
+tem5 := var0
+tem3 := #0 - tem5
+tem4 := #1
+tem2 := tem3 + tem4
+WRITE tem2
+tem6 := var0
+IF tem6 != #0 GOTO label0
+GOTO label1
+LABEL label0 :
+tem8 := CALL main
+tem7 := tem8
+RETURN tem7
+GOTO label2
+LABEL label1 :
+tem9 := #0
+RETURN tem9
+LABEL label2 :
