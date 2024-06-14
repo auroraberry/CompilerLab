@@ -1,0 +1,89 @@
+FUNCTION func2 :
+PARAM var0
+tem0 := #0
+var1 := tem0
+tem1 := #0
+var2 := tem1
+tem3 := var0
+tem4 := tem3 + #800
+tem2 := *tem4
+var3 := tem2
+LABEL label0 :
+tem5 := var2
+tem6 := var3
+IF tem5 < tem6 GOTO label1
+GOTO label2
+LABEL label1 :
+tem11 := var2
+tem13 := var0
+tem14 := tem13 + #0
+tem12 := tem14
+tem15 := tem11 * #8
+tem16 := tem12 + tem15
+tem10 := tem16
+tem17 := tem10 + #0
+tem8 := *tem17
+tem9 := var1
+tem7 := tem8 + tem9
+var1 := tem7
+tem19 := var2
+tem20 := #1
+tem18 := tem19 + tem20
+var2 := tem18
+GOTO label0
+LABEL label2 :
+tem22 := var1
+tem23 := var3
+tem21 := tem22 / tem23
+RETURN tem21
+FUNCTION main :
+DEC var4 804
+tem24 := #0
+var5 := tem24
+tem25 := #10
+var6 := tem25
+tem26 := #0
+var7 := tem26
+tem28 := &var4
+tem29 := tem28 + #800
+tem27 := tem29
+tem30 := var6
+*tem27 := tem30
+LABEL label3 :
+tem31 := var7
+tem32 := var6
+IF tem31 < tem32 GOTO label4
+GOTO label5
+LABEL label4 :
+tem35 := var7
+tem37 := &var4
+tem38 := tem37 + #0
+tem36 := tem38
+tem39 := tem35 * #8
+tem40 := tem36 + tem39
+tem34 := tem40
+tem41 := tem34 + #0
+tem33 := tem41
+tem45 := var7
+tem46 := #1
+tem43 := tem45 + tem46
+tem47 := var7
+tem48 := #1
+tem44 := tem47 + tem48
+tem42 := tem43 * tem44
+*tem33 := tem42
+tem50 := var7
+tem51 := #1
+tem49 := tem50 + tem51
+var7 := tem49
+GOTO label3
+LABEL label5 :
+tem53 := &var4
+ARG tem53
+tem54 := CALL func2
+tem52 := tem54
+var5 := tem52
+tem55 := var5
+WRITE tem55
+tem56 := #0
+RETURN tem56
